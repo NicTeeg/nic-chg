@@ -30,6 +30,9 @@ func NewRepo(db *sql.DB) *Repo {
 
 // InsertChart inserts a new chart into the charts table.
 func (r *Repo) InsertChart(chart Chart) (int64, error) {
+	if chart.Name == "" || chart.Repository == "" {
+		return 0, fmt.Errorf("name and repository cannot be empty")
+	}
 	result, err := r.DB.Exec("INSERT INTO charts (name, repository, line_of_business, registry_path) VALUES (?, ?, ?, ?)",
 		chart.Name, chart.Repository, chart.LineOfBusiness, chart.RegistryPath)
 	if err != nil {
@@ -75,6 +78,9 @@ func (r *Repo) GetChartByNameAndRepository(name, repository string) (*Chart, err
 
 // InsertChartVersion inserts a new chart version into the chart_versions table.
 func (r *Repo) InsertChartVersion(version ChartVersion) (int64, error) {
+	if version.Version == "" || version.CommitSHA == "" {
+		return 0, fmt.Errorf("version and commit SHA cannot be empty")
+	}
 	result, err := r.DB.Exec("INSERT INTO chart_versions (chart_id, version, commit_sha) VALUES (?, ?, ?)",
 		version.ChartID, version.Version, version.CommitSHA)
 	if err != nil {
@@ -110,6 +116,10 @@ func (r *Repo) GetChartVersionByChartIDAndVersion(chartID int, version string) (
 
 // InsertChartVersionPromotion inserts a new chart version promotion into the chart_version_promotions table.
 func (r *Repo) InsertChartVersionPromotion(promotion ChartVersionPromotion) (int64, error) {
+	// error if release channel is empty or promoted at is zero
+	if promotion.ReleaseChannel == "" {
+		return 0, fmt.Errorf("release channel cannot be empty")
+	}
 	result, err := r.DB.Exec("INSERT INTO chart_version_promotions (chart_id, chart_version_id, release_channel, promoted_at, active) VALUES (?, ?, ?, ?, ?)",
 		promotion.ChartID, promotion.ChartVersionID, promotion.ReleaseChannel, promotion.PromotedAt, promotion.Active)
 	if err != nil {
