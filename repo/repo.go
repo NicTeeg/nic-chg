@@ -5,6 +5,20 @@ import (
 	"fmt"
 )
 
+// Repository defines the methods that any repository implementation must have.
+type Repository interface {
+	InsertChart(chart Chart) (int64, error)
+	UpdateChart(chart Chart) error
+	GetChartByID(id int) (*Chart, error)
+	GetChartByNameAndRepository(name, repository string) (*Chart, error)
+	InsertChartVersion(version ChartVersion) (int64, error)
+	GetChartVersionByID(id int) (*ChartVersion, error)
+	GetChartVersionByChartIDAndVersion(chartID int, version string) (*ChartVersion, error)
+	InsertChartVersionPromotion(promotion ChartVersionPromotion) (int64, error)
+	GetChartVersionPromotionByID(id int) (*ChartVersionPromotion, error)
+	DeactivatePreviousPromotion(chartID int, releaseChannel string) error
+}
+
 type Repo struct {
 	DB *sql.DB
 }
@@ -40,9 +54,6 @@ func (r *Repo) GetChartByID(id int) (*Chart, error) {
 	err := r.DB.QueryRow("SELECT id, name, repository, line_of_business, registry_path FROM charts WHERE id = ?", id).
 		Scan(&chart.ID, &chart.Name, &chart.Repository, &chart.LineOfBusiness, &chart.RegistryPath)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to get chart by ID: %w", err)
 	}
 	return &chart, nil
@@ -78,9 +89,6 @@ func (r *Repo) GetChartVersionByID(id int) (*ChartVersion, error) {
 	err := r.DB.QueryRow("SELECT id, chart_id, version, commit_sha, created_at FROM chart_versions WHERE id = ?", id).
 		Scan(&version.ID, &version.ChartID, &version.Version, &version.CommitSHA, &version.CreatedAt)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to get chart version by ID: %w", err)
 	}
 	return &version, nil
@@ -116,9 +124,6 @@ func (r *Repo) GetChartVersionPromotionByID(id int) (*ChartVersionPromotion, err
 	err := r.DB.QueryRow("SELECT id, chart_version_id, release_channel, promoted_at, active FROM chart_version_promotions WHERE id = ?", id).
 		Scan(&promotion.ID, &promotion.ChartVersionID, &promotion.ReleaseChannel, &promotion.PromotedAt, &promotion.Active)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to get chart version promotion by ID: %w", err)
 	}
 	return &promotion, nil

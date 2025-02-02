@@ -1,25 +1,21 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
 	"nic-chg/repo"
 	"time"
 )
 
-// AddChartPromotion inserts a chart version promotion into the database.
-func AddChartPromotion(r *repo.Repo, promotionData string) error {
-	var input struct {
-		ChartName      string `json:"chart_name"`
-		Repository     string `json:"repository"`
-		Version        string `json:"version"`
-		ReleaseChannel string `json:"release_channel"`
-		PromotedAt     string `json:"promoted_at"`
-	}
-	if err := json.Unmarshal([]byte(promotionData), &input); err != nil {
-		return fmt.Errorf("error parsing promotion data: %w", err)
-	}
+type AddChartPromotionInput struct {
+	ChartName      string `json:"chart_name"`
+	Repository     string `json:"repository"`
+	Version        string `json:"version"`
+	ReleaseChannel string `json:"release_channel"`
+	PromotedAt     string `json:"promoted_at"`
+}
 
+// AddChartPromotion inserts a chart version promotion into the database.
+func AddChartPromotion(r repo.Repository, input AddChartPromotionInput) error {
 	// Retrieve the chart by name and repository
 	chart, err := r.GetChartByNameAndRepository(input.ChartName, input.Repository)
 	if err != nil {
