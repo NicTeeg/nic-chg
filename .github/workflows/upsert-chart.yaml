@@ -1,23 +1,22 @@
 name: Upsert Chart
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       chart_name:
         description: 'Name of the chart to upsert'
+        type: string
         required: true
       repository:
         description: 'Name of the repository to upsert the chart to'
+        type: string
         required: true
       line_of_business:
         description: 'Line of business for the chart'
-        required: true
+        type: string
       registry_path:
         description: 'Path to the chart in the registry'
-        required: true
+        type: string
 
 jobs:
   upsert-chart:
