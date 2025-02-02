@@ -24,7 +24,7 @@ The database schema consists of two tables:
 To insert or updatea Helm chart into the database, use the -upsert-chart flag with JSON formatted input:
 
 ```sh
-go run main.go -upsert-chart='{
+nic-chg -upsert-chart='{
   "chart_name": "example-chart",
   "repository": "example-repo",
   "line_of_business": "example-lob",
@@ -37,7 +37,7 @@ go run main.go -upsert-chart='{
 To insert a Helm chart version into the database, use the -add-chart-version flag with JSON formatted input:
 
 ```sh
-go run main.go -add-chart-version='{
+nic-chg -add-chart-version='{
   "chart_name": "example-chart",
   "repository": "example-repo",
   "version": "1.0.1",
@@ -53,7 +53,7 @@ A Chart will also be inserted if it does not exist.
 To insert a Helm chart promotion into the database, use the -add-chart-promotion flag with JSON formatted input:
 
 ```sh
-go run main.go -add-chart-promotion='{
+nic-chg -add-chart-promotion='{
   "chart_name": "example-chart",
   "repository": "example-repo",
   "version": "1.0.1",
