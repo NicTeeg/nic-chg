@@ -1,4 +1,4 @@
-name: Run Go CLI
+name: Build And Test CLI
 
 on:
   push:
@@ -7,10 +7,9 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  run-cli:
+  build-and-test-cli:
     runs-on: ubuntu-latest
 
     steps:
