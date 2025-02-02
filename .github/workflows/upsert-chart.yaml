@@ -1,4 +1,4 @@
-name: Upsert Chart
+name: Upsert Chart (${{ github.event.inputs.repository }}/${{ github.event.inputs.chart_name }})
 
 on:
   workflow_dispatch:
