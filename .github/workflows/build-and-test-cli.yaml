@@ -27,8 +27,8 @@ jobs:
       - name: Run tests
         run: go test -v ./...
 
-      - name: Compile CLI
-        run: go build -o bin/nic-chg
+      - name: Build CLI
+        run: go build -o tmp/nic-chg
 
       - name: Test CLI
         run: ./scripts/test-cli.sh

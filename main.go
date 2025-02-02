@@ -19,12 +19,13 @@ import (
 
 func main() {
 	// Command line flags
+	dbPath := flag.String("db", "db/changelog.db", "The relative path to the SQLite database file")
 	upsertChartData := flag.String("upsert-chart", "", "JSON formatted chart data")
 	addChartVersionData := flag.String("add-chart-version", "", "JSON formatted chart and chart version data")
 	addChartPromotionData := flag.String("add-chart-promotion", "", "JSON formatted chart version promotion data")
 	flag.Parse()
 
-	db, err := initializeDatabase()
+	db, err := initializeDatabase(dbPath)
 	if err != nil {
 		log.Fatalf("Error initializing database: %v", err)
 	}
@@ -81,16 +82,16 @@ func handleAddChartPromotion(addChartPromotionData *string, repo *repo.Repo) {
 }
 
 // initializeDatabase sets up the SQLite database and ensures migrations are applied.
-func initializeDatabase() (*sql.DB, error) {
+func initializeDatabase(dbPath *string) (*sql.DB, error) {
 	// Connect to SQLite database
-	db, err := sql.Open("sqlite3", "./db/changelog.db")
+	db, err := sql.Open("sqlite3", fmt.Sprintf("./%s", *dbPath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
 	m, err := migrate.New(
 		"file://db/migrations",
-		"sqlite3://db/changelog.db?query")
+		fmt.Sprintf("sqlite3://%s?query", *dbPath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize db migrations: %w", err)
 	}
