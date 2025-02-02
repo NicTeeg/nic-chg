@@ -1,0 +1,45 @@
+name: Upsert Chart
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      chart_name:
+        description: 'Name of the chart to upsert'
+        required: true
+      repository:
+        description: 'Name of the repository to upsert the chart to'
+        required: true
+      line_of_business:
+        description: 'Line of business for the chart'
+        required: true
+      registry_path:
+        description: 'Path to the chart in the registry'
+        required: true
+
+jobs:
+  upsert-chart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build CLI
+        run: ./scripts/build-cli.sh
+
+      - name: Upsert chart
+        run: |
+          ./tmp/nic-chg -upsert-chart='{
+            "chart_name": "${{ github.event.inputs.chart_name }}",
+            "repository": "${{ github.event.inputs.repository }}",
+            "line_of_business": "${{ github.event.inputs.line_of_business }}",
+            "registry_path": "${{ github.event.inputs.registry_path }}"
+          }'
