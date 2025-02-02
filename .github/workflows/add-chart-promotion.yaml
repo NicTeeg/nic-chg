@@ -44,7 +44,7 @@ jobs:
       - name: Build CLI
         run: ./scripts/build-cli.sh
 
-      - name: Upsert chart
+      - name: Execute CLI
         run: |
           ./tmp/nic-chg -add-chart-promotion='{
             "chart_name": "${{ github.event.inputs.chart_name }}",
