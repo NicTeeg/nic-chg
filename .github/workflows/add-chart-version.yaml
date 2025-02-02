@@ -1,0 +1,63 @@
+name: Add Chart Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      chart_name:
+        description: 'Name of the chart to upsert'
+        type: string
+        required: true
+      repository:
+        description: 'Name of the repository to upsert the chart to'
+        type: string
+        required: true
+      version:
+        description: 'Version of the chart (eg. 1.0.0)'
+        type: string
+        required: true
+      commit_sha:
+        description: 'SHA of the commit related to the chart version'
+        type: string
+        required: true
+      commit_message:
+        description: 'The commit message for the chart version'
+        type: string
+
+concurrency:
+  group: update-db-${{ github.ref }}
+
+run-name: Add Chart Version (${{ github.event.inputs.repository }}/${{ github.event.inputs.chart_name }}:${{ github.event.inputs.version }})
+
+jobs:
+  upsert-chart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build CLI
+        run: ./scripts/build-cli.sh
+
+      - name: Upsert chart
+        run: |
+          ./tmp/nic-chg -add-chart-version='{
+            "chart_name": "${{ github.event.inputs.chart_name }}",
+            "repository": "${{ github.event.inputs.repository }}",
+            "version": "${{ github.event.inputs.version }}",
+            "commit_sha": "${{ github.event.inputs.commit_sha }}",
+            "commit_message": "${{ github.event.inputs.commit_message }}"
+          }'
+
+      - name: Commit data
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add db/changelog.db
+          git commit -am "[add-chart-version] ${{ github.event.inputs.repository }}/${{ github.event.inputs.chart_name }}:${{ github.event.inputs.version }}"
+          git push
