@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"nic-chg/repo"
@@ -9,7 +8,7 @@ import (
 )
 
 // AddChartPromotion inserts a chart version promotion into the database.
-func AddChartPromotion(db *sql.DB, promotionData string) error {
+func AddChartPromotion(r *repo.Repo, promotionData string) error {
 	var input struct {
 		ChartName      string `json:"chart_name"`
 		Repository     string `json:"repository"`
@@ -22,7 +21,7 @@ func AddChartPromotion(db *sql.DB, promotionData string) error {
 	}
 
 	// Retrieve the chart by name and repository
-	chart, err := repo.GetChartByNameAndRepository(db, input.ChartName, input.Repository)
+	chart, err := r.GetChartByNameAndRepository(input.ChartName, input.Repository)
 	if err != nil {
 		return fmt.Errorf("error retrieving chart: %w", err)
 	}
@@ -32,7 +31,7 @@ func AddChartPromotion(db *sql.DB, promotionData string) error {
 	}
 
 	// Retrieve the chart version by chart ID and version
-	chartVersion, err := repo.GetChartVersionByChartIDAndVersion(db, chart.ID, input.Version)
+	chartVersion, err := r.GetChartVersionByChartIDAndVersion(chart.ID, input.Version)
 	if err != nil {
 		return fmt.Errorf("error retrieving chart version: %w", err)
 	}
@@ -42,7 +41,7 @@ func AddChartPromotion(db *sql.DB, promotionData string) error {
 	}
 
 	// Deactivate the previous promotion for the same release channel
-	if err := repo.DeactivatePreviousPromotion(db, chart.ID, input.ReleaseChannel); err != nil {
+	if err := r.DeactivatePreviousPromotion(chart.ID, input.ReleaseChannel); err != nil {
 		return fmt.Errorf("error deactivating previous promotion: %w", err)
 	}
 
@@ -61,7 +60,7 @@ func AddChartPromotion(db *sql.DB, promotionData string) error {
 		Active:         true,
 	}
 
-	if _, err := repo.InsertChartVersionPromotion(db, promotion); err != nil {
+	if _, err := r.InsertChartVersionPromotion(promotion); err != nil {
 		return fmt.Errorf("error inserting chart version promotion: %w", err)
 	}
 

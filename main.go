@@ -13,6 +13,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"nic-chg/commands"
+	"nic-chg/repo"
 )
 
 func main() {
@@ -28,9 +29,12 @@ func main() {
 	}
 	defer db.Close()
 
+	// Instantiate the Repo struct
+	repo := repo.NewRepo(db)
+
 	if *upsertChartData != "" {
 		fmt.Println("Received upsert-chart data:", *upsertChartData)
-		if err := commands.UpsertChart(db, *upsertChartData); err != nil {
+		if err := commands.UpsertChart(repo, *upsertChartData); err != nil {
 			log.Fatalf("Error upserting chart: %v", err)
 		}
 		fmt.Println("Chart upserted successfully.")
@@ -38,7 +42,7 @@ func main() {
 
 	if *addChartVersionData != "" {
 		fmt.Println("Received add-chart-version data:", *addChartVersionData)
-		if err := commands.AddChartVersion(db, *addChartVersionData); err != nil {
+		if err := commands.AddChartVersion(repo, *addChartVersionData); err != nil {
 			log.Fatalf("Error adding chart version: %v", err)
 		}
 		fmt.Println("Chart version inserted successfully.")
@@ -46,7 +50,7 @@ func main() {
 
 	if *addChartPromotionData != "" {
 		fmt.Println("Received add-chart-promotion data:", *addChartPromotionData)
-		if err := commands.AddChartPromotion(db, *addChartPromotionData); err != nil {
+		if err := commands.AddChartPromotion(repo, *addChartPromotionData); err != nil {
 			log.Fatalf("Error adding chart promotion: %v", err)
 		}
 		fmt.Println("Chart promotion inserted successfully.")

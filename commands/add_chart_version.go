@@ -1,14 +1,13 @@
 package commands
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"nic-chg/repo"
 )
 
 // AddChartVersion inserts a chart and chart version into the database.
-func AddChartVersion(db *sql.DB, chartData string) error {
+func AddChartVersion(r *repo.Repo, chartData string) error {
 	var input struct {
 		ChartName     string `json:"chart_name"`
 		Repository    string `json:"repository"`
@@ -22,7 +21,7 @@ func AddChartVersion(db *sql.DB, chartData string) error {
 	}
 
 	// Check if the chart already exists
-	existingChart, err := repo.GetChartByNameAndRepository(db, input.ChartName, input.Repository)
+	existingChart, err := r.GetChartByNameAndRepository(input.ChartName, input.Repository)
 	if err != nil {
 		return fmt.Errorf("error checking if chart exists: %w", err)
 	}
@@ -36,7 +35,7 @@ func AddChartVersion(db *sql.DB, chartData string) error {
 			Name:       input.ChartName,
 			Repository: input.Repository,
 		}
-		chartID, err = repo.InsertChart(db, chart)
+		chartID, err = r.InsertChart(chart)
 		if err != nil {
 			return fmt.Errorf("error inserting chart: %w", err)
 		}
@@ -49,7 +48,7 @@ func AddChartVersion(db *sql.DB, chartData string) error {
 		CommitMessage: input.CommitMessage,
 	}
 
-	if _, err := repo.InsertChartVersion(db, chartVersion); err != nil {
+	if _, err := r.InsertChartVersion(chartVersion); err != nil {
 		return fmt.Errorf("error inserting chart version: %w", err)
 	}
 	return nil
