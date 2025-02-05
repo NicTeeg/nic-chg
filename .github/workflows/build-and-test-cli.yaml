@@ -6,11 +6,13 @@ on:
       - main
     paths-ignore:
       - 'db/changelog.db'
+      - 'app/**'
   pull_request:
     branches:
       - main
     paths-ignore:
       - 'db/changelog.db'
+      - 'app/**'
 
 jobs:
   build-and-test-cli:
