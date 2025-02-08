@@ -17,7 +17,9 @@
     "flowbite-react": "^0.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^7.1.5"
+    "react-router-dom": "^7.1.5",
+    "sql-bricks": "^3.0.1",
+    "sql.js-httpvfs": "^0.8.12"
   },
   "devDependencies": {
     "@types/react": "^18.2.67",
