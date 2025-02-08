@@ -6,7 +6,7 @@ import Home from './Home';
 
 function App() {
   return (
-    <Router>
+    <Router basename='/nic-chg'>
       <div className="flex min-h-screen">
         <SideBar />
         <main className="flex-1 p-4 dark:bg-gray-800">
