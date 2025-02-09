@@ -7,21 +7,6 @@ const workerUrl = new URL(
 );
 const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
-const worker = await createDbWorker(
-  [
-    {
-      from: "inline",
-      config: {
-        serverMode: "full",
-        url: "/nic-chg/changelog.db",
-        requestChunkSize: 4096,
-      },
-    },
-  ],
-  workerUrl.toString(),
-  wasmUrl.toString(),
-);
-
 export async function getAllRepositories(): Promise<Repository[]> {
   const result = await queryDb(
     `SELECT DISTINCT repository, line_of_business FROM charts`,
@@ -81,7 +66,20 @@ export async function getChartByName(name: string): Promise<Chart | null> {
 }
 
 async function queryDb(query: string, ...params: string[]): Promise<any[]> {
-  console.log("queryDb");
+  const worker = await createDbWorker(
+    [
+      {
+        from: "inline",
+        config: {
+          serverMode: "full",
+          url: "/nic-chg/changelog.db",
+          requestChunkSize: 4096,
+        },
+      },
+    ],
+    workerUrl.toString(),
+    wasmUrl.toString(),
+  );
   const result = await worker.db.query(query, params);
   return result;
 }
