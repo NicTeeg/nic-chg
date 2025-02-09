@@ -1,8 +1,8 @@
-import { HashRouter, Route, Routes } from 'react-router-dom';
-import SideBar from './SideBar';
-import Chart from './Chart';
-import ChartTwo from './ChartTwo';
-import Home from './Home';
+import { HashRouter, Route, Routes } from "react-router-dom";
+import ChartChangelog from "./ChartChangelog";
+import Charts from "./Charts";
+import Home from "./Home";
+import { SideBar } from "./SideBar";
 
 function App() {
   return (
@@ -12,8 +12,8 @@ function App() {
         <main className="flex-1 p-4 dark:bg-gray-800">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/chart" element={<Chart />} />
-            <Route path="/charttwo" element={<ChartTwo />} />
+            <Route path="/charts" element={<Charts />} />
+            <Route path="/changelog" element={<ChartChangelog />} />
           </Routes>
         </main>
       </div>

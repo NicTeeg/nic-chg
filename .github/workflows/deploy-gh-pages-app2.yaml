@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - 'app2/**'
+      - "app2/**"
   pull_request:
     branches:
       - main
     paths:
-      - 'app2/**'
+      - "app2/**"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 23
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: ./app/package-lock.json
 
       - name: Install dependencies
@@ -53,7 +53,7 @@ jobs:
         run: npm run build
 
       - name: Refresh DB
-        run: cp db/changelog.db app2/dist/data.db
+        run: cp db/changelog.db app2/dist/changelog.db
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload dist folder
-          path: './app2/dist'
+          path: "./app2/dist"
 
       - name: Deploy to GitHub Pages
         id: deployment

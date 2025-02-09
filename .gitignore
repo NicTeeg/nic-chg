@@ -2,3 +2,4 @@ tmp
 app/.next
 app/node_modules
 **/.vscode
+app/public/changelog.db

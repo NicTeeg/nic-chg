@@ -1,11 +1,11 @@
 const Home = () => {
-    return (
-      <div className="flex items-center justify-center gap-2">
+  return (
+    <div className="flex items-center justify-center gap-2">
       <h1 className="text-2xl dark:text-white">
-        Flowbite React + Vite
+        Retrieve Charts versions and promotion history.
       </h1>
     </div>
-    );
-  };
-  
-  export default Home;
+  );
+};
+
+export default Home;
