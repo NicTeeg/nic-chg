@@ -11,6 +11,7 @@ type AddChartVersionInput struct {
 	Version       string `json:"version"`
 	CommitSHA     string `json:"commit_sha"`
 	CommitMessage string `json:"commit_message"`
+	CreatedAt     string `json:"created_at"`
 }
 
 // AddChartVersion inserts a chart and chart version into the database.
@@ -41,6 +42,7 @@ func AddChartVersion(r repo.Repository, input AddChartVersionInput) error {
 		Version:       input.Version,
 		CommitSHA:     input.CommitSHA,
 		CommitMessage: input.CommitMessage,
+		CreatedAt:     input.CreatedAt,
 	}
 
 	if _, err := r.InsertChartVersion(chartVersion); err != nil {
