@@ -1,4 +1,5 @@
 export interface Chart {
+  id: number;
   name: string;
   repository: string;
   lob: string;
@@ -6,10 +7,12 @@ export interface Chart {
 }
 
 export interface ChartVersion {
+  id: number;
   version: string;
   commitSHA: string;
   commitMessage: string;
   createdAt: string;
+  promotions: ChartVersionPromotion[];
 }
 
 export interface ChartVersionPromotion {

@@ -1,5 +1,10 @@
 import { createDbWorker } from "sql.js-httpvfs";
-import { Repository, Chart } from "./types";
+import {
+  Repository,
+  Chart,
+  ChartVersion,
+  ChartVersionPromotion,
+} from "./types";
 
 const workerUrl = new URL(
   "sql.js-httpvfs/dist/sqlite.worker.js",
@@ -38,6 +43,7 @@ export async function getChartsByRepository(
 
   const charts: Chart[] = result.map((row) => {
     return {
+      id: row.id,
       name: row.name,
       repository: row.repository,
       lob: row.line_of_business,
@@ -54,8 +60,9 @@ export async function getChartByName(name: string): Promise<Chart | null> {
     return null;
   }
 
-  const chartData: ChartData = result[0];
+  const chartData = result[0];
   const chart: Chart = {
+    id: chartData.id,
     name: chartData.name,
     repository: chartData.repository,
     lob: chartData.line_of_business,
@@ -63,6 +70,60 @@ export async function getChartByName(name: string): Promise<Chart | null> {
   };
 
   return chart;
+}
+
+export async function getChartActiveVersions(
+  chartId: string,
+): Promise<ChartVersion[] | null> {
+  const result = await queryDb(
+    `SELECT
+    cvp.id AS promotion_id,
+    cvp.chart_version_id,
+    cvp.release_channel,
+    cvp.promoted_at,
+    cv.id AS version_id,
+    cv.version,
+    cv.commit_sha,
+    cv.commit_message,
+    cv.created_at
+FROM
+    chart_version_promotions cvp
+JOIN
+    chart_versions cv ON cvp.chart_version_id = cv.id
+WHERE
+    cvp.chart_id = ? AND cvp.active = 1
+ORDER BY cv.created_at DESC`,
+    chartId,
+  );
+  if (result.length === 0) {
+    return [];
+  }
+
+  const versionMap = new Map<number, ChartVersion>();
+
+  result.forEach((row) => {
+    const promotion: ChartVersionPromotion = {
+      releaseChannel: row.release_channel,
+      promotedAt: row.promoted_at,
+      active: true,
+    };
+
+    if (versionMap.has(row.version_id)) {
+      versionMap.get(row.version_id)!.promotions.push(promotion);
+    } else {
+      const chartVersion: ChartVersion = {
+        id: row.version_id,
+        version: row.version,
+        commitSHA: row.commit_sha,
+        commitMessage: row.commit_message,
+        createdAt: row.created_at,
+        promotions: [promotion],
+      };
+      versionMap.set(row.version_id, chartVersion);
+    }
+  });
+
+  return Array.from(versionMap.values());
 }
 
 async function queryDb(query: string, ...params: string[]): Promise<any[]> {
@@ -83,29 +144,3 @@ async function queryDb(query: string, ...params: string[]): Promise<any[]> {
   const result = await worker.db.query(query, params);
   return result;
 }
-
-interface ChartData {
-  id: number;
-  name: string;
-  repository: string;
-  line_of_business: string;
-  registry_path: string;
-}
-
-// interface ChartVersionData {
-//   id: number;
-//   chart_id: number;
-//   version: string;
-//   commit_sha: string;
-//   commit_message: string;
-//   created_at: string;
-// }
-
-// interface ChartVersionPromotionData {
-//   id: number;
-//   chart_id: number;
-//   chart_version_id: number;
-//   release_channel: string;
-//   promoted_at: string;
-//   active: boolean;
-// }
