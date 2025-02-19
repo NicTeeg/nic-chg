@@ -35,9 +35,17 @@ const ChartVersionCard: React.FC<ChartVersionCardProps> = ({
                   ? tagColors[promotion.releaseChannel] ||
                     "bg-gray-200 text-gray-800"
                   : "bg-gray-50 text-gray-400"
-              } rounded px-2 py-1 text-xs font-semibold`}
+              } rounded px-2 py-1 text-xs font-semibold ${!compact && 'flex flex-col items-center gap-0.5'}`}
             >
-              {promotion.releaseChannel}
+              <span>{promotion.releaseChannel}</span>
+              {!compact && (
+                <span className="text-[11px] opacity-80">
+                  {new Date(promotion.promotedAt).toLocaleString(undefined, {
+                    dateStyle: 'short',
+                    timeStyle: 'short'
+                  })}
+                </span>
+              )}
             </span>
           ))}
         </div>
