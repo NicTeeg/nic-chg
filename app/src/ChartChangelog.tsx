@@ -1,41 +1,85 @@
-import { useState } from "react";
-import { ChartVersion } from "./db/types";
-
-const TABLE_HEAD = ["Version", "Commit SHA", "Commit Message", "Date"];
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  getAllCharts,
+  getChartByName,
+  getChartVersions,
+} from "./db/db";
+import { Chart, ChartVersion } from "./db/types";
+import { Menu, Button } from "@material-tailwind/react";
+import { NavArrowDown } from "iconoir-react";
+import ChartVersionCard from "./components/ChartVersionCard";
 
 const ChartChangelog = () => {
-  const [chartVersions] = useState<ChartVersion[]>([]);
+  const [charts, setCharts] = useState<Chart[]>([]);
+  const [selectedChart, setSelectedChart] = useState<Chart>();
+  const [chartVersions, setChartVersions] = useState<ChartVersion[]>([]);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    getAllCharts().then((result) => {
+      setCharts(result);
+    });
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const repo = params.get("repository");
+    const chart = params.get("chart");
+    if (repo && chart) {
+      getChartByName(chart).then((result) => {
+        result && setSelectedChart(result);
+      });
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (selectedChart) {
+      getChartVersions(selectedChart.id.toString()).then((result) => {
+        setChartVersions(result || []);
+      });
+    }
+  }, [selectedChart]);
+
+  const handleChartSelect = (chart: Chart) => {
+    setSelectedChart(chart);
+    navigate(`?repository=${chart.repository}&chart=${chart.name}`);
+  };
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-surface">
-      <table className="w-full">
-        <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
-          <tr>
-            {TABLE_HEAD.map((head) => (
-              <th key={head} className="px-2.5 py-2 text-start font-medium">
-                {head}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="group text-sm text-black dark:text-white">
-          {chartVersions.map(
-            ({ version, commitSHA, commitMessage, createdAt }, index) => {
-              return (
-                <tr
-                  key={index}
-                  className="even:bg-surface-light dark:even:bg-surface-dark"
-                >
-                  <td className="p-3">{version}</td>
-                  <td className="p-3">{commitSHA}</td>
-                  <td className="p-3">{commitMessage}</td>
-                  <td className="p-3">{createdAt}</td>
-                </tr>
-              );
-            },
-          )}
-        </tbody>
-      </table>
+    <div className="overflow-x-auto">
+      <Menu>
+        <Menu.Trigger
+          as={Button}
+          size="lg"
+          variant="ghost"
+          className="flex items-center gap-1"
+        >
+          {selectedChart?.name || "Select chart"}{" "}
+          <NavArrowDown className="size-3.5 stroke-2 group-data-[open=true]:rotate-180" />
+        </Menu.Trigger>
+        <Menu.Content>
+          {charts.map((chart) => (
+            <Menu.Item key={chart.id} onClick={() => handleChartSelect(chart)}>
+              {chart.repository} / {chart.name}
+            </Menu.Item>
+          ))}
+        </Menu.Content>
+      </Menu>
+      {""}
+      {selectedChart &&
+        chartVersions.map((version) => (
+          <div key={version.id} className="mb-2">
+            <ChartVersionCard
+              key={version.id}
+              chart={selectedChart}
+              version={version}
+              compact={false}
+            />
+          </div>
+        ))}
     </div>
   );
 };

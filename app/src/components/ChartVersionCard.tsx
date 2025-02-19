@@ -4,6 +4,7 @@ import { ChartVersion, Chart } from "../db/types";
 interface ChartVersionCardProps {
   chart: Chart;
   version: ChartVersion;
+  compact?: boolean;
 }
 
 const tagColors: { [key: string]: string } = {
@@ -16,9 +17,12 @@ const tagColors: { [key: string]: string } = {
 const ChartVersionCard: React.FC<ChartVersionCardProps> = ({
   chart,
   version,
+  compact = false,
 }) => {
   return (
-    <div className="w-[280px] rounded-lg border bg-white p-2 shadow-md dark:bg-gray-800">
+    <div
+      className={`${compact && "w-[280px]"} rounded-lg border bg-white p-2 shadow-md dark:bg-gray-800`}
+    >
       <div className="flex items-start justify-between">
         <span className="text-lg font-bold">{version.version}</span>
         <div className="flex items-center gap-1">
@@ -26,7 +30,12 @@ const ChartVersionCard: React.FC<ChartVersionCardProps> = ({
             <span
               key={index}
               title={`${new Date(promotion.promotedAt).toLocaleString()}`}
-              className={`${tagColors[promotion.releaseChannel] || "bg-gray-200 text-gray-800"} rounded px-2 py-1 text-xs font-semibold`}
+              className={`${
+                promotion.active
+                  ? tagColors[promotion.releaseChannel] ||
+                    "bg-gray-200 text-gray-800"
+                  : "bg-gray-50 text-gray-400"
+              } rounded px-2 py-1 text-xs font-semibold`}
             >
               {promotion.releaseChannel}
             </span>

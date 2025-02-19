@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   getAllRepositories,
   getChartsByRepository,
-  getChartActiveVersions,
+  getChartVersions,
 } from "./db/db";
 import { Repository, Chart, ChartVersion } from "./db/types";
 import { Menu, Button } from "@material-tailwind/react";
@@ -43,7 +43,7 @@ const Charts = () => {
       getChartsByRepository(selectedRepository).then((result) => {
         setCharts(result);
         result.forEach((chart) => {
-          getChartActiveVersions(chart.id.toString()).then((versions) => {
+          getChartVersions(chart.id.toString(), true).then((versions) => {
             if (versions) {
               setActiveVersions((prev) => ({
                 ...prev,
@@ -115,6 +115,7 @@ const Charts = () => {
                             key={version.id}
                             chart={chart}
                             version={version}
+                            compact={true}
                           />
                         ))}
                     </div>

@@ -30,6 +30,25 @@ export async function getAllRepositories(): Promise<Repository[]> {
   return repositories;
 }
 
+export async function getAllCharts(): Promise<Chart[]> {
+  const result = await queryDb(`SELECT * FROM charts`);
+  if (result.length === 0) {
+    return [];
+  }
+
+  const charts: Chart[] = result.map((row) => {
+    return {
+      id: row.id,
+      name: row.name,
+      repository: row.repository,
+      lob: row.line_of_business,
+      registryPath: row.registry_path,
+    };
+  });
+
+  return charts;
+}
+
 export async function getChartsByRepository(
   repository: string,
 ): Promise<Chart[]> {
@@ -72,27 +91,32 @@ export async function getChartByName(name: string): Promise<Chart | null> {
   return chart;
 }
 
-export async function getChartActiveVersions(
+export async function getChartVersions(
   chartId: string,
+  activeOnly = false,
 ): Promise<ChartVersion[] | null> {
   const result = await queryDb(
-    `SELECT
-    cvp.id AS promotion_id,
-    cvp.chart_version_id,
-    cvp.release_channel,
-    cvp.promoted_at,
-    cv.id AS version_id,
-    cv.version,
-    cv.commit_sha,
-    cv.commit_message,
-    cv.created_at
+    `
+SELECT
+  cvp.id AS promotion_id,
+  cvp.chart_version_id,
+  cvp.release_channel,
+  cvp.promoted_at,
+  cvp.active,
+  cv.id AS version_id,
+  cv.version,
+  cv.commit_sha,
+  cv.commit_message,
+  cv.created_at
 FROM
-    chart_version_promotions cvp
+  chart_version_promotions cvp
 JOIN
-    chart_versions cv ON cvp.chart_version_id = cv.id
+  chart_versions cv ON cvp.chart_version_id = cv.id
 WHERE
-    cvp.chart_id = ? AND cvp.active = 1
-ORDER BY cv.created_at DESC`,
+  cvp.chart_id = ?
+  ${activeOnly ? "AND cvp.active = 1" : ""}
+ORDER BY cv.created_at DESC
+`,
     chartId,
   );
   if (result.length === 0) {
@@ -105,7 +129,7 @@ ORDER BY cv.created_at DESC`,
     const promotion: ChartVersionPromotion = {
       releaseChannel: row.release_channel,
       promotedAt: row.promoted_at,
-      active: true,
+      active: row.active,
     };
 
     if (versionMap.has(row.version_id)) {
@@ -126,21 +150,29 @@ ORDER BY cv.created_at DESC`,
   return Array.from(versionMap.values());
 }
 
-async function queryDb(query: string, ...params: string[]): Promise<any[]> {
-  const worker = await createDbWorker(
-    [
-      {
-        from: "inline",
-        config: {
-          serverMode: "full",
-          url: "/nic-chg/changelog.db",
-          requestChunkSize: 4096,
+let dbWorker: any = null;
+async function getDbWorker() {
+  if (!dbWorker) {
+    dbWorker = await createDbWorker(
+      [
+        {
+          from: "inline",
+          config: {
+            serverMode: "full",
+            url: "/nic-chg/changelog.db",
+            requestChunkSize: 4096,
+          },
         },
-      },
-    ],
-    workerUrl.toString(),
-    wasmUrl.toString(),
-  );
+      ],
+      workerUrl.toString(),
+      wasmUrl.toString(),
+    );
+  }
+  return dbWorker;
+}
+
+async function queryDb(query: string, ...params: string[]): Promise<any[]> {
+  const worker = await getDbWorker();
   const result = await worker.db.query(query, params);
   return result;
 }
