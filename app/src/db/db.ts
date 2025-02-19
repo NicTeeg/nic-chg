@@ -73,8 +73,15 @@ export async function getChartsByRepository(
   return charts;
 }
 
-export async function getChartByName(name: string): Promise<Chart | null> {
-  const result = await queryDb(`SELECT * FROM charts WHERE name = ?`, name);
+export async function getChartByRepoAndName(
+  repository: string,
+  name: string,
+): Promise<Chart | null> {
+  const result = await queryDb(
+    `SELECT * FROM charts WHERE repository = ? AND name = ?`,
+    repository,
+    name,
+  );
   if (result.length === 0) {
     return null;
   }

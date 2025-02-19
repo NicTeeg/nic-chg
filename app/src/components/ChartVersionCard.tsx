@@ -5,6 +5,7 @@ interface ChartVersionCardProps {
   chart: Chart;
   version: ChartVersion;
   compact?: boolean;
+  hideReleaseChannels?: boolean;
 }
 
 const tagColors: { [key: string]: string } = {
@@ -18,6 +19,7 @@ const ChartVersionCard: React.FC<ChartVersionCardProps> = ({
   chart,
   version,
   compact = false,
+  hideReleaseChannels = false,
 }) => {
   return (
     <div
@@ -25,30 +27,32 @@ const ChartVersionCard: React.FC<ChartVersionCardProps> = ({
     >
       <div className="flex items-start justify-between">
         <span className="text-lg font-bold">{version.version}</span>
-        <div className="flex items-center gap-1">
-          {version.promotions.map((promotion, index) => (
-            <span
-              key={index}
-              title={`${new Date(promotion.promotedAt).toLocaleString()}`}
-              className={`${
-                promotion.active
-                  ? tagColors[promotion.releaseChannel] ||
-                    "bg-gray-200 text-gray-800"
-                  : "bg-gray-50 text-gray-400"
-              } rounded px-2 py-1 text-xs font-semibold ${!compact && 'flex flex-col items-center gap-0.5'}`}
-            >
-              <span>{promotion.releaseChannel}</span>
-              {!compact && (
-                <span className="text-[11px] opacity-80">
-                  {new Date(promotion.promotedAt).toLocaleString(undefined, {
-                    dateStyle: 'short',
-                    timeStyle: 'short'
-                  })}
-                </span>
-              )}
-            </span>
-          ))}
-        </div>
+        {hideReleaseChannels || (
+          <div className="flex items-center gap-1">
+            {version.promotions.map((promotion, index) => (
+              <span
+                key={index}
+                title={`${new Date(promotion.promotedAt).toLocaleString()}`}
+                className={`${
+                  promotion.active
+                    ? tagColors[promotion.releaseChannel] ||
+                      "bg-gray-200 text-gray-800"
+                    : "bg-gray-50 text-gray-400"
+                } rounded px-2 py-1 text-xs font-semibold ${!compact && "flex flex-col items-center gap-0.5"}`}
+              >
+                <span>{promotion.releaseChannel}</span>
+                {!compact && (
+                  <span className="text-[11px] opacity-80">
+                    {new Date(promotion.promotedAt).toLocaleString(undefined, {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <div className="mt-2">
         <a

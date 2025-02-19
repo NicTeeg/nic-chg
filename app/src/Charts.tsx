@@ -26,6 +26,20 @@ const Charts = () => {
   useEffect(() => {
     getAllRepositories().then((result) => {
       setRepositories(result);
+
+      // Load initial repository from URL or localStorage
+      const params = new URLSearchParams(location.search);
+      const repoFromUrl = params.get("repository");
+
+      if (!repoFromUrl) {
+        const savedRepo = localStorage.getItem("selectedRepository");
+        if (savedRepo) {
+          const foundRepo = result.find((r) => r.name === savedRepo);
+          if (foundRepo) {
+            handleRepositorySelect(foundRepo);
+          }
+        }
+      }
     });
   }, []);
 
@@ -59,6 +73,7 @@ const Charts = () => {
   const handleRepositorySelect = (repository: Repository) => {
     setSelectedRepository(repository.name);
     setSelectedRepoDisplay(repository.lob + " / " + repository.name);
+    localStorage.setItem("selectedRepository", repository.name);
     navigate(`?repository=${repository.name}`);
   };
 
