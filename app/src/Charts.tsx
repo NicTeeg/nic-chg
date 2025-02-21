@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   getAllRepositories,
@@ -8,8 +8,16 @@ import {
 import { Repository, Chart, ChartVersion } from "./db/types";
 import { Menu, Button } from "@material-tailwind/react";
 import { NavArrowDown } from "iconoir-react";
-import ChartVersionCard from "./components/ChartVersionCard";
-import ChartCard from "./components/ChartCard";
+import { Link } from "react-router-dom";
+
+const SpannedCell = ({ content, rowSpan }: { content: React.ReactNode; rowSpan: number }) => (
+  <td
+    className="p-2 whitespace-nowrap align-top bg-white dark:bg-gray-800"
+    rowSpan={rowSpan}
+  >
+    {content}
+  </td>
+);
 
 const Charts = () => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -100,42 +108,103 @@ const Charts = () => {
           ))}
         </Menu.Content>
       </Menu>
-      {""}
       <div className="w-full overflow-hidden rounded-lg border border-surface">
         <table className="w-full">
           <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
             <tr>
-              {["Chart", "Active Versions"].map((head) => (
-                <th key={head} className="px-2.5 py-2 text-start font-medium">
-                  {head}
+              {[
+                "LOB",
+                "Repository", 
+                "Chart Name",
+                "Release Channels",
+                "Version",
+                "Description",
+                "Created At"
+              ].map((header) => (
+                <th 
+                  key={header} 
+                  className={`px-2.5 py-2 text-start font-medium ${
+                    header === "Release Channels" ? "w-min whitespace-nowrap" : ""
+                  }`}
+                >
+                  {header}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody className="group text-sm text-black dark:text-white">
-            {charts.map((chart, index) => {
+            {charts.map((chart) => {
+              const versions = activeVersions[chart.id] || [];
               return (
-                <tr
-                  key={index}
-                  className="border-b border-gray-200 even:bg-surface-light dark:border-gray-700"
-                >
-                  <td className="w-[260px] p-2">
-                    <ChartCard chart={chart} />
-                  </td>
-                  <td className="p-2">
-                    <div className="flex flex-wrap gap-2">
-                      {activeVersions[chart.id] &&
-                        activeVersions[chart.id].map((version) => (
-                          <ChartVersionCard
-                            key={version.id}
-                            chart={chart}
-                            version={version}
-                            compact={true}
+                <React.Fragment key={chart.id}>
+                  {versions.map((version, versionIndex) => (
+                    <tr
+                      key={`${chart.id}-${version.id}`}
+                      className={`border-b border-gray-200 dark:border-gray-700 ${
+                        versionIndex % 2 === 1 ? 'bg-surface-light dark:bg-surface-dark' : ''
+                      }`}
+                    >
+                      {versionIndex === 0 ? (
+                        <>
+                          <SpannedCell content={chart.lob} rowSpan={versions.length} />
+                          <SpannedCell content={chart.repository} rowSpan={versions.length} />
+                          <SpannedCell
+                            content={
+                              <Link
+                                to={`/changelog?repository=${chart.repository}&chart=${chart.name}`}
+                                className="text-blue-600 font-bold hover:underline"
+                              >
+                                {chart.name}
+                              </Link>
+                            }
+                            rowSpan={versions.length}
                           />
-                        ))}
-                    </div>
-                  </td>
-                </tr>
+                        </>
+                      ) : null}
+                      <td className="p-2 w-min">
+                        <div className="flex flex-wrap gap-1">
+                          {version.promotions
+                            .filter((promotion) => promotion.active)
+                            .map((promotion, index) => (
+                              <span
+                                key={index}
+                                title={`Promoted at: ${new Date(
+                                  promotion.promotedAt
+                                ).toLocaleString()}`}
+                                className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 whitespace-nowrap"
+                              >
+                                {promotion.releaseChannel}
+                              </span>
+                            ))}
+                        </div>
+                      </td>
+                      <td className="p-2 whitespace-nowrap font-bold">
+                        {version.version}
+                      </td>
+                      <td className="p-2 max-w-md">
+                        <a
+                          href={`https://github.com/org/${chart.repository}/commit/${version.commitSHA}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                          title={version.commitMessage}
+                        >
+                          {version.commitMessage}
+                        </a>
+                      </td>
+                      <td className="p-2 whitespace-nowrap text-gray-600 dark:text-gray-400">
+                        {new Date(version.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               );
             })}
           </tbody>
