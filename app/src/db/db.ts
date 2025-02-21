@@ -53,8 +53,8 @@ export async function getChartsByRepositories(
   repositories: string[],
 ): Promise<Chart[]> {
   const result = await queryDb(
-    `SELECT * FROM charts WHERE repository in (?)`,
-    repositories.join(","),
+    `SELECT * FROM charts WHERE repository IN (${repositories.map(() => "?").join(",")})`,
+    ...repositories,
   );
   if (result.length === 0) {
     return [];
