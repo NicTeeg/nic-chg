@@ -49,12 +49,12 @@ export async function getAllCharts(): Promise<Chart[]> {
   return charts;
 }
 
-export async function getChartsByRepository(
-  repository: string,
+export async function getChartsByRepositories(
+  repositories: string[],
 ): Promise<Chart[]> {
   const result = await queryDb(
-    `SELECT * FROM charts WHERE repository = ?`,
-    repository,
+    `SELECT * FROM charts WHERE repository in (?)`,
+    repositories.join(","),
   );
   if (result.length === 0) {
     return [];

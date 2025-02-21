@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   getAllRepositories,
-  getChartsByRepository,
+  getChartsByRepositories,
   getChartVersions,
 } from "./db/db";
 import { Repository, Chart, ChartVersion } from "./db/types";
@@ -62,7 +62,7 @@ const Charts = () => {
 
   useEffect(() => {
     if (selectedRepository) {
-      getChartsByRepository(selectedRepository).then((result) => {
+      getChartsByRepositories([selectedRepository]).then((result) => {
         setCharts(result);
         result.forEach((chart) => {
           getChartVersions(chart.id.toString(), true).then((versions) => {
