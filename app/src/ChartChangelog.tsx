@@ -6,6 +6,7 @@ import { Menu, Button, Tabs } from "@material-tailwind/react";
 import { NavArrowDown } from "iconoir-react";
 import ChartVersionCard from "./components/ChartVersionCard";
 import PromotionTimeline from "./components/PromotionTimeline";
+import { getUniqueReleaseChannels } from "./utils/releaseChannels";
 
 const ChartChangelog = () => {
   const [charts, setCharts] = useState<Chart[]>([]);
@@ -45,6 +46,11 @@ const ChartChangelog = () => {
     navigate(`?repository=${chart.repository}&chart=${chart.name}`);
   };
 
+  const releaseChannels = chartVersions
+    .flatMap((version) => version.promotions.map((p) => p.releaseChannel))
+    .filter((value, index, self) => self.indexOf(value) === index)
+    .sort();
+
   return (
     <div className="overflow-x-auto">
       {""}
@@ -76,17 +82,93 @@ const ChartChangelog = () => {
           <Tabs.TriggerIndicator className="rounded-none border-b-2 border-primary bg-transparent shadow-none" />
         </Tabs.List>
         <Tabs.Panel value="versions">
-          {selectedChart &&
-            chartVersions.map((version) => (
-              <div key={version.id} className="mb-2">
-                <ChartVersionCard
-                  key={version.id}
-                  chart={selectedChart}
-                  version={version}
-                  compact={false}
-                />
-              </div>
-            ))}
+          {selectedChart && chartVersions.length > 0 && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
+                  <tr>
+                    <th className="whitespace-nowrap px-4 py-2 text-start font-medium">
+                      Version
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-2 text-start font-medium">
+                      Description
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-2 text-start font-medium">
+                      Created At
+                    </th>
+                    <th className="w-min whitespace-nowrap px-4 py-2 text-start font-medium">
+                      Release Channels
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chartVersions.map((version, index) => (
+                    <tr
+                      key={version.id}
+                      className={`border-b border-gray-200 dark:border-gray-700 ${
+                        index % 2 === 1
+                          ? "bg-surface-light dark:bg-surface-dark"
+                          : ""
+                      }`}
+                    >
+                      <td className="whitespace-nowrap px-4 py-2 font-bold">
+                        {version.version}
+                      </td>
+                      <td className="max-w-md px-4 py-2">
+                        <a
+                          href={`https://github.com/org/${selectedChart.repository}/commit/${version.commitSHA}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                          title={version.commitMessage}
+                        >
+                          {version.commitMessage}
+                        </a>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2 text-gray-600">
+                        {new Date(version.createdAt).toLocaleString(undefined, {
+                          year: "2-digit",
+                          month: "short",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })}
+                      </td>
+                      <td className="w-min px-4 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {version.promotions.map((promotion, index) => (
+                            <span
+                              key={index}
+                              title={`${promotion.active ? "Promoted" : "Inactive"} at: ${new Date(
+                                promotion.promotedAt,
+                              ).toLocaleString()}`}
+                              className={`whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${
+                                promotion.active
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-600"
+                              } flex flex-col items-center`}
+                            >
+                              <span>{promotion.releaseChannel}</span>
+                              <span className="mt-0.5 text-[10px] opacity-75">
+                                {new Date(promotion.promotedAt).toLocaleString(
+                                  undefined,
+                                  {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  },
+                                )}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Tabs.Panel>
         <Tabs.Panel value="promotions" className="scrollbar overflow-x-scroll">
           {selectedChart && chartVersions.length > 0 && (
