@@ -67,6 +67,11 @@ const SpannedCell = ({
   </td>
 );
 
+interface ChartWithLatestCreatedAt extends Chart {
+  versions: ChartVersion[];
+  latestCreatedAt: string;
+}
+
 const Charts = () => {
   const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
     [],
@@ -94,12 +99,10 @@ const Charts = () => {
         setCharts(result);
         result.forEach((chart) => {
           getChartVersions(chart.id.toString(), true).then((versions) => {
-            if (versions) {
-              setActiveVersions((prev) => ({
-                ...prev,
-                [chart.id]: versions,
-              }));
-            }
+            setActiveVersions((prev) => ({
+              ...prev,
+              [chart.id]: versions,
+            }));
           });
         });
       });
@@ -116,6 +119,114 @@ const Charts = () => {
       setSortField(field);
       setSortDirection("desc");
     }
+  };
+
+  const withLatestCreatedAt = (chart: Chart): ChartWithLatestCreatedAt => ({
+    ...chart,
+    versions: (activeVersions[chart.id] || []).sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    ),
+    latestCreatedAt:
+      activeVersions[chart.id]?.[0]?.createdAt || new Date(0).toISOString(),
+  });
+
+  const sortedCharts = (
+    a: ChartWithLatestCreatedAt,
+    b: ChartWithLatestCreatedAt,
+  ): number => {
+    if (sortField === "createdAt") {
+      const comparison =
+        new Date(b.latestCreatedAt).getTime() -
+        new Date(a.latestCreatedAt).getTime();
+      return sortDirection === "asc" ? -comparison : comparison;
+    }
+    if (sortField === "chartName") {
+      return sortDirection === "asc"
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name);
+    }
+    return 0;
+  };
+
+  const buildChartRow = (chart: ChartWithLatestCreatedAt) => {
+    const versions = chart.versions;
+    return (
+      <React.Fragment key={chart.id}>
+        {versions.map((version, versionIndex) => (
+          <tr
+            key={`${chart.id}-${version.id}`}
+            className={`border-b border-gray-200 dark:border-gray-700 ${
+              versionIndex % 2 === 1
+                ? "bg-surface-light dark:bg-surface-dark"
+                : ""
+            }`}
+          >
+            {versionIndex === 0 ? (
+              <>
+                <SpannedCell content={chart.lob} rowSpan={versions.length} />
+                <SpannedCell
+                  content={chart.repository}
+                  rowSpan={versions.length}
+                />
+                <SpannedCell
+                  content={
+                    <Link
+                      to={`/changelog?repository=${chart.repository}&chart=${chart.name}`}
+                      className="font-bold text-blue-600 hover:underline"
+                    >
+                      {chart.name}
+                    </Link>
+                  }
+                  rowSpan={versions.length}
+                />
+              </>
+            ) : null}
+            <td className="w-min p-2">
+              <div className="flex flex-wrap gap-1">
+                {version.promotions
+                  .filter((promotion) => promotion.active)
+                  .map((promotion, index) => (
+                    <span
+                      key={index}
+                      title={`Promoted at: ${new Date(
+                        promotion.promotedAt,
+                      ).toLocaleString()}`}
+                      className="whitespace-nowrap rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
+                    >
+                      {promotion.releaseChannel}
+                    </span>
+                  ))}
+              </div>
+            </td>
+            <td className="whitespace-nowrap p-2 font-bold">
+              {version.version}
+            </td>
+            <td className="max-w-md p-2">
+              <a
+                href={`https://github.com/org/${chart.repository}/commit/${version.commitSHA}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+                title={version.commitMessage}
+              >
+                {version.commitMessage}
+              </a>
+            </td>
+            <td className="whitespace-nowrap p-2 text-gray-600 dark:text-gray-400">
+              {new Date(version.createdAt).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })}
+            </td>
+          </tr>
+        ))}
+      </React.Fragment>
+    );
   };
 
   return (
@@ -155,116 +266,9 @@ const Charts = () => {
             </thead>
             <tbody className="group text-sm text-black dark:text-white">
               {charts
-                .map((chart) => ({
-                  ...chart,
-                  versions: (activeVersions[chart.id] || []).sort(
-                    (a, b) =>
-                      new Date(b.createdAt).getTime() -
-                      new Date(a.createdAt).getTime(),
-                  ),
-                  latestCreatedAt:
-                    activeVersions[chart.id]?.[0]?.createdAt ||
-                    new Date(0).toISOString(),
-                }))
-                .sort((a, b) => {
-                  if (sortField === "createdAt") {
-                    const comparison =
-                      new Date(b.latestCreatedAt).getTime() -
-                      new Date(a.latestCreatedAt).getTime();
-                    return sortDirection === "asc" ? -comparison : comparison;
-                  }
-                  if (sortField === "chartName") {
-                    return sortDirection === "asc"
-                      ? a.name.localeCompare(b.name)
-                      : b.name.localeCompare(a.name);
-                  }
-                  return 0;
-                })
-                .map((chart) => {
-                  const versions = chart.versions;
-                  return (
-                    <React.Fragment key={chart.id}>
-                      {versions.map((version, versionIndex) => (
-                        <tr
-                          key={`${chart.id}-${version.id}`}
-                          className={`border-b border-gray-200 dark:border-gray-700 ${
-                            versionIndex % 2 === 1
-                              ? "bg-surface-light dark:bg-surface-dark"
-                              : ""
-                          }`}
-                        >
-                          {versionIndex === 0 ? (
-                            <>
-                              <SpannedCell
-                                content={chart.lob}
-                                rowSpan={versions.length}
-                              />
-                              <SpannedCell
-                                content={chart.repository}
-                                rowSpan={versions.length}
-                              />
-                              <SpannedCell
-                                content={
-                                  <Link
-                                    to={`/changelog?repository=${chart.repository}&chart=${chart.name}`}
-                                    className="font-bold text-blue-600 hover:underline"
-                                  >
-                                    {chart.name}
-                                  </Link>
-                                }
-                                rowSpan={versions.length}
-                              />
-                            </>
-                          ) : null}
-                          <td className="w-min p-2">
-                            <div className="flex flex-wrap gap-1">
-                              {version.promotions
-                                .filter((promotion) => promotion.active)
-                                .map((promotion, index) => (
-                                  <span
-                                    key={index}
-                                    title={`Promoted at: ${new Date(
-                                      promotion.promotedAt,
-                                    ).toLocaleString()}`}
-                                    className="whitespace-nowrap rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
-                                  >
-                                    {promotion.releaseChannel}
-                                  </span>
-                                ))}
-                            </div>
-                          </td>
-                          <td className="whitespace-nowrap p-2 font-bold">
-                            {version.version}
-                          </td>
-                          <td className="max-w-md p-2">
-                            <a
-                              href={`https://github.com/org/${chart.repository}/commit/${version.commitSHA}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                              title={version.commitMessage}
-                            >
-                              {version.commitMessage}
-                            </a>
-                          </td>
-                          <td className="whitespace-nowrap p-2 text-gray-600 dark:text-gray-400">
-                            {new Date(version.createdAt).toLocaleDateString(
-                              undefined,
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: false,
-                              },
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
+                .map(withLatestCreatedAt)
+                .sort(sortedCharts)
+                .map(buildChartRow)}
             </tbody>
           </table>
         </div>
