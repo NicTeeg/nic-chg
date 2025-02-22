@@ -1,0 +1,153 @@
+import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { getAllRepositories } from "../db/db";
+import { Repository } from "../db/types";
+import { Checkbox } from "@material-tailwind/react";
+import { NavArrowDown } from "iconoir-react";
+
+interface RepositoryGroupProps {
+  lob: string;
+  repositories: Repository[];
+  selectedRepositories: string[];
+  onSelect: (repository: Repository) => void;
+}
+
+const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
+  lob,
+  repositories,
+  selectedRepositories,
+  onSelect,
+}) => {
+  const hasSelectedRepository = repositories.some((repo) =>
+    selectedRepositories.includes(repo.name),
+  );
+  const [isExpanded, setIsExpanded] = useState(hasSelectedRepository);
+
+  return (
+    <div className="mb-2">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center justify-between rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <span className="font-medium">{lob}</span>
+        <span
+          className={`transform transition-transform ${isExpanded ? "rotate-180" : ""}`}
+        >
+          <NavArrowDown />
+        </span>
+      </button>
+      {isExpanded && (
+        <div className="ml-2 mt-1 flex flex-col gap-1">
+          {repositories.map((repository) => (
+            <div key={repository.name} className="flex items-center gap-2">
+              <div className="shrink-0">
+                <Checkbox
+                  id={repository.name}
+                  color="secondary"
+                  checked={selectedRepositories.includes(repository.name)}
+                  onChange={() => onSelect(repository)}
+                >
+                  <Checkbox.Indicator />
+                </Checkbox>
+              </div>
+              <span className="min-w-0 flex-1 text-sm">{repository.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface RepositorySelectorProps {
+  selectedRepositories: string[];
+  onSelectedRepositoriesChange: (repositories: string[]) => void;
+}
+
+const RepositorySelector: React.FC<RepositorySelectorProps> = ({
+  selectedRepositories,
+  onSelectedRepositoriesChange,
+}) => {
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    getAllRepositories().then((result) => {
+      setRepositories(result);
+
+      const params = new URLSearchParams(location.search);
+      const repoParam = params.get("repositories");
+
+      if (!repoParam) {
+        const savedRepos = localStorage.getItem("selectedRepositories");
+        if (savedRepos) {
+          const selectedRepos = JSON.parse(savedRepos);
+          onSelectedRepositoriesChange(selectedRepos);
+          navigate(`?repositories=${selectedRepos.join(",")}`);
+        }
+      }
+    });
+  }, []);
+
+  const groupedRepositories = useMemo(() => {
+    const groups = repositories.reduce(
+      (groups, repo) => {
+        const group = groups[repo.lob] || [];
+        group.push(repo);
+        groups[repo.lob] = group;
+        return groups;
+      },
+      {} as Record<string, Repository[]>,
+    );
+
+    Object.keys(groups).forEach((lob) => {
+      groups[lob].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [repositories]);
+
+  const handleRepositorySelect = (repository: Repository) => {
+    const isSelected = selectedRepositories.includes(repository.name);
+    let newSelected: string[];
+
+    if (isSelected) {
+      newSelected = selectedRepositories.filter(
+        (name) => name !== repository.name,
+      );
+    } else {
+      newSelected = [...selectedRepositories, repository.name];
+    }
+
+    onSelectedRepositoriesChange(newSelected);
+    localStorage.setItem("selectedRepositories", JSON.stringify(newSelected));
+
+    if (newSelected.length > 0) {
+      navigate(`?repositories=${newSelected.join(",")}`);
+    } else {
+      navigate("");
+    }
+  };
+
+  return (
+    <div className="w-60 shrink-0 border-r border-surface bg-white p-4 dark:bg-gray-800">
+      <h2 className="mb-4 font-bold">Repositories</h2>
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col pr-2">
+          {groupedRepositories.map(([lob, repos]) => (
+            <RepositoryGroup
+              key={lob}
+              lob={lob}
+              repositories={repos}
+              selectedRepositories={selectedRepositories}
+              onSelect={handleRepositorySelect}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RepositorySelector;

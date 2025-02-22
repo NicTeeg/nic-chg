@@ -9,6 +9,7 @@ import { Repository, Chart, ChartVersion } from "./db/types";
 import { Checkbox } from "@material-tailwind/react";
 import { NavArrowDown } from "iconoir-react";
 import { Link } from "react-router-dom";
+import RepositorySelector from "./components/RepositorySelector";
 
 const SpannedCell = ({
   content,
@@ -73,7 +74,6 @@ const RepositoryGroup = ({
 };
 
 const Charts = () => {
-  const [repositories, setRepositories] = useState<Repository[]>([]);
   const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
     [],
   );
@@ -81,26 +81,7 @@ const Charts = () => {
   const [activeVersions, setActiveVersions] = useState<{
     [key: string]: ChartVersion[];
   }>({});
-
-  const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    getAllRepositories().then((result) => {
-      setRepositories(result);
-
-      const params = new URLSearchParams(location.search);
-      const repoParam = params.get("repositories");
-
-      if (!repoParam) {
-        const savedRepos = localStorage.getItem("selectedRepositories");
-        if (savedRepos) {
-          const parsed = JSON.parse(savedRepos);
-          setSelectedRepositories(parsed);
-        }
-      }
-    });
-  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -132,71 +113,13 @@ const Charts = () => {
     }
   }, [selectedRepositories]);
 
-  const groupedRepositories = useMemo(() => {
-    // First, group repositories by LOB
-    const groups = repositories.reduce(
-      (groups, repo) => {
-        const group = groups[repo.lob] || [];
-        group.push(repo);
-        groups[repo.lob] = group;
-        return groups;
-      },
-      {} as Record<string, Repository[]>
-    );
-
-    // Sort repositories within each group
-    Object.keys(groups).forEach(lob => {
-      groups[lob].sort((a, b) => a.name.localeCompare(b.name));
-    });
-
-    // Create sorted entries array
-    const sortedEntries = Object.entries(groups)
-      .sort(([a], [b]) => a.localeCompare(b));
-
-    return sortedEntries;
-  }, [repositories]);
-
-  const handleRepositorySelect = (repository: Repository) => {
-    const isSelected = selectedRepositories.includes(repository.name);
-    let newSelected: string[];
-
-    if (isSelected) {
-      newSelected = selectedRepositories.filter(
-        (name) => name !== repository.name,
-      );
-    } else {
-      newSelected = [...selectedRepositories, repository.name];
-    }
-
-    setSelectedRepositories(newSelected);
-    localStorage.setItem("selectedRepositories", JSON.stringify(newSelected));
-
-    // Update URL with raw comma-separated repositories
-    if (newSelected.length > 0) {
-      navigate(`?repositories=${newSelected.join(",")}`);
-    } else {
-      navigate("");
-    }
-  };
-
   return (
-    <div className="flex gap-4 p-4">
-      <div className="w-64 shrink-0 rounded-lg border border-surface bg-white p-4 dark:bg-gray-800">
-        <h2 className="mb-4 font-bold">Repositories</h2>
-        <div className="flex flex-col">
-          {groupedRepositories.map(([lob, repos]) => (
-            <RepositoryGroup
-              key={lob}
-              lob={lob}
-              repositories={repos}
-              selectedRepositories={selectedRepositories}
-              onSelect={handleRepositorySelect}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-x-auto">
+    <div className="flex h-screen">
+      <RepositorySelector
+        selectedRepositories={selectedRepositories}
+        onSelectedRepositoriesChange={setSelectedRepositories}
+      />
+      <div className="flex-1 overflow-auto p-4">
         <div className="w-full overflow-hidden rounded-lg border border-surface">
           <table className="w-full">
             <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
