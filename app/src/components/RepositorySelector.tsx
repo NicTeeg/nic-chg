@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { getAllRepositories } from "../db/db";
 import { Repository } from "../db/types";
 import { Checkbox } from "@material-tailwind/react";
-import { NavArrowDown } from "iconoir-react";
+import { NavArrowDown, Filter } from "iconoir-react";
 
 interface RepositoryGroupProps {
   lob: string;
   repositories: Repository[];
   selectedRepositories: string[];
+  filter: string;
   onSelect: (repository: Repository) => void;
 }
 
@@ -16,12 +17,13 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
   lob,
   repositories,
   selectedRepositories,
+  filter,
   onSelect,
 }) => {
   const hasSelectedRepository = repositories.some((repo) =>
     selectedRepositories.includes(repo.name),
   );
-  const [isExpanded, setIsExpanded] = useState(hasSelectedRepository);
+  const [isExpanded, setIsExpanded] = useState<boolean>(hasSelectedRepository);
 
   return (
     <div className="mb-2">
@@ -36,23 +38,30 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
           <NavArrowDown />
         </span>
       </button>
-      {isExpanded && (
+      {(isExpanded || filter.length > 0) && (
         <div className="ml-2 mt-1 flex flex-col gap-1">
-          {repositories.map((repository) => (
-            <div key={repository.name} className="flex items-center gap-2">
-              <div className="shrink-0">
-                <Checkbox
-                  id={repository.name}
-                  color="secondary"
-                  checked={selectedRepositories.includes(repository.name)}
-                  onChange={() => onSelect(repository)}
-                >
-                  <Checkbox.Indicator />
-                </Checkbox>
+          {repositories.map((repository) =>
+            repository.name.includes(filter) ? (
+              <div
+                key={repository.name}
+                className="flex items-center gap-2 py-0.5"
+              >
+                <div className="flex shrink-0 items-center">
+                  <Checkbox
+                    id={repository.name}
+                    color="secondary"
+                    checked={selectedRepositories.includes(repository.name)}
+                    onChange={() => onSelect(repository)}
+                  >
+                    <Checkbox.Indicator />
+                  </Checkbox>
+                </div>
+                <span className="min-w-0 flex-1 text-sm leading-none">
+                  {repository.name}
+                </span>
               </div>
-              <span className="min-w-0 flex-1 text-sm">{repository.name}</span>
-            </div>
-          ))}
+            ) : null,
+          )}
         </div>
       )}
     </div>
@@ -69,6 +78,7 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
   onSelectedRepositoriesChange,
 }) => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [repoFilter, setRepoFilter] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -133,6 +143,16 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
   return (
     <div className="w-60 shrink-0 border-r border-surface bg-white p-4 dark:bg-gray-800">
       <h2 className="mb-4 font-bold">Repositories</h2>
+      <div className="mb-4 flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-gray-700 dark:bg-gray-900">
+        <Filter className="h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Filter repositories..."
+          value={repoFilter}
+          onChange={(e) => setRepoFilter(e.target.value)}
+          className="w-full bg-transparent text-sm placeholder-gray-400 outline-none"
+        />
+      </div>
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col pr-2">
           {groupedRepositories.map(([lob, repos]) => (
@@ -141,6 +161,7 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
               lob={lob}
               repositories={repos}
               selectedRepositories={selectedRepositories}
+              filter={repoFilter}
               onSelect={handleRepositorySelect}
             />
           ))}
