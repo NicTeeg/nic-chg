@@ -4,9 +4,7 @@ import { getAllCharts, getChartByRepoAndName, getChartVersions } from "./db/db";
 import { Chart, ChartVersion } from "./db/types";
 import { Menu, Button, Tabs } from "@material-tailwind/react";
 import { NavArrowDown } from "iconoir-react";
-import ChartVersionCard from "./components/ChartVersionCard";
 import PromotionTimeline from "./components/PromotionTimeline";
-import { getUniqueReleaseChannels } from "./utils/releaseChannels";
 
 const ChartChangelog = () => {
   const [charts, setCharts] = useState<Chart[]>([]);
