@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getAllCharts, getChartByRepoAndName, getChartVersions } from "../../db/db";
+import { getChartByRepoAndName, getChartVersions } from "../../db/db";
 import { Chart, ChartVersion } from "../../db/types";
-import { Menu, Button, Tabs } from "@material-tailwind/react";
-import { NavArrowDown } from "iconoir-react";
+import { Tabs } from "@material-tailwind/react";
 import PromotionTimeline from "../shared/PromotionTimeline";
 import ChartSelector from "../shared/ChartSelector";
 import RepositorySelector from "../shared/RepositorySelector";
 import { SimpleHeader } from "../shared/table/Headers";
 
 function ChartChangelog() {
-  const [charts, setCharts] = useState<Chart[]>([]);
   const [selectedChart, setSelectedChart] = useState<Chart>();
   const [chartVersions, setChartVersions] = useState<ChartVersion[]>([]);
   const [selectedRepository, setSelectedRepository] = useState<string[]>([]);
