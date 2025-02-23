@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Chart } from "../db/types";
+import { Chart } from "../../../db/types";
 
 interface ChartCardProps {
   chart: Chart;
