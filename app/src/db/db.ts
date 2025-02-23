@@ -1,15 +1,8 @@
 import { createDbWorker } from "sql.js-httpvfs";
-import {
-  Repository,
-  Chart,
-  ChartVersion,
-  ChartVersionPromotion,
-} from "./types";
+import { Repository, Chart, ChartVersion, ChartVersionPromotion } from "./types";
 
 export async function getAllRepositories(): Promise<Repository[]> {
-  const result = await queryDb(
-    `SELECT DISTINCT repository, line_of_business FROM charts`,
-  );
+  const result = await queryDb(`SELECT DISTINCT repository, line_of_business FROM charts`);
   if (result.length === 0) {
     return [];
   }
@@ -43,9 +36,7 @@ export async function getAllCharts(): Promise<Chart[]> {
   return charts;
 }
 
-export async function getChartsByRepositories(
-  repositories: string[],
-): Promise<Chart[]> {
+export async function getChartsByRepositories(repositories: string[]): Promise<Chart[]> {
   const query = `
   SELECT
     * 
@@ -160,10 +151,7 @@ export async function getChartVersions(
   return Array.from(versionMap.values());
 }
 
-const workerUrl = new URL(
-  "sql.js-httpvfs/dist/sqlite.worker.js",
-  import.meta.url,
-);
+const workerUrl = new URL("sql.js-httpvfs/dist/sqlite.worker.js", import.meta.url);
 const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 let dbWorker: any = null;
 async function getDbWorker() {

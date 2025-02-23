@@ -4,4 +4,5 @@ export default {
   // tailwindcss
   tailwindAttributes: ["theme"],
   tailwindFunctions: ["twMerge", "createTheme"],
+  printWidth: 100,
 };

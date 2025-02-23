@@ -50,21 +50,13 @@ const ChartChangelog = () => {
       <Tabs defaultValue="versions">
         <Tabs.List className="rounded-none border-b border-secondary-dark bg-transparent py-0">
           <Menu>
-            <Menu.Trigger
-              as={Button}
-              size="lg"
-              variant="ghost"
-              className="flex items-center gap-1"
-            >
+            <Menu.Trigger as={Button} size="lg" variant="ghost" className="flex items-center gap-1">
               {selectedChart?.name || "Select chart"}{" "}
               <NavArrowDown className="size-3.5 stroke-2 group-data-[open=true]:rotate-180" />
             </Menu.Trigger>
             <Menu.Content>
               {charts.map((chart) => (
-                <Menu.Item
-                  key={chart.id}
-                  onClick={() => handleChartSelect(chart)}
-                >
+                <Menu.Item key={chart.id} onClick={() => handleChartSelect(chart)}>
                   {chart.repository} / {chart.name}
                 </Menu.Item>
               ))}
@@ -80,9 +72,7 @@ const ChartChangelog = () => {
               <table className="w-full border-collapse text-sm">
                 <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
                   <tr>
-                    <th className="whitespace-nowrap px-4 py-2 text-start font-medium">
-                      Version
-                    </th>
+                    <th className="whitespace-nowrap px-4 py-2 text-start font-medium">Version</th>
                     <th className="whitespace-nowrap px-4 py-2 text-start font-medium">
                       Description
                     </th>
@@ -99,14 +89,10 @@ const ChartChangelog = () => {
                     <tr
                       key={version.id}
                       className={`border-b border-gray-200 dark:border-gray-700 ${
-                        index % 2 === 1
-                          ? "bg-surface-light dark:bg-surface-dark"
-                          : ""
+                        index % 2 === 1 ? "bg-surface-light dark:bg-surface-dark" : ""
                       }`}
                     >
-                      <td className="whitespace-nowrap px-4 py-2 font-bold">
-                        {version.version}
-                      </td>
+                      <td className="whitespace-nowrap px-4 py-2 font-bold">{version.version}</td>
                       <td className="max-w-md px-4 py-2">
                         <a
                           href={`https://github.com/org/${selectedChart.repository}/commit/${version.commitSHA}`}
@@ -144,13 +130,10 @@ const ChartChangelog = () => {
                             >
                               <span>{promotion.releaseChannel}</span>
                               <span className="mt-0.5 text-[10px] opacity-75">
-                                {new Date(promotion.promotedAt).toLocaleString(
-                                  undefined,
-                                  {
-                                    dateStyle: "short",
-                                    timeStyle: "short",
-                                  },
-                                )}
+                                {new Date(promotion.promotedAt).toLocaleString(undefined, {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                })}
                               </span>
                             </span>
                           ))}
@@ -166,10 +149,7 @@ const ChartChangelog = () => {
         <Tabs.Panel value="promotions" className="scrollbar overflow-x-scroll">
           {selectedChart && chartVersions.length > 0 && (
             <div className="mt-4">
-              <PromotionTimeline
-                chart={selectedChart}
-                versions={chartVersions}
-              />
+              <PromotionTimeline chart={selectedChart} versions={chartVersions} />
             </div>
           )}
         </Tabs.Panel>

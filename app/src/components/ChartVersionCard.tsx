@@ -35,8 +35,7 @@ const ChartVersionCard: React.FC<ChartVersionCardProps> = ({
                 title={`${new Date(promotion.promotedAt).toLocaleString()}`}
                 className={`${
                   promotion.active
-                    ? tagColors[promotion.releaseChannel] ||
-                      "bg-gray-200 text-gray-800"
+                    ? tagColors[promotion.releaseChannel] || "bg-gray-200 text-gray-800"
                     : "bg-gray-50 text-gray-400"
                 } rounded px-2 py-1 text-xs font-semibold ${!compact && "flex flex-col items-center gap-0.5"}`}
               >

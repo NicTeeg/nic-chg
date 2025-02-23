@@ -13,10 +13,7 @@ interface GroupedPromotion {
   promotedAt: string;
 }
 
-const PromotionTimeline: React.FC<PromotionTimelineProps> = ({
-  chart,
-  versions,
-}) => {
+const PromotionTimeline: React.FC<PromotionTimelineProps> = ({ chart, versions }) => {
   // Get unique channels and their earliest promotion dates
   const channelFirstDates = versions
     .flatMap((version) =>
@@ -55,8 +52,7 @@ const PromotionTimeline: React.FC<PromotionTimelineProps> = ({
       });
 
       acc[channel] = promotions.sort(
-        (a, b) =>
-          new Date(b.promotedAt).getTime() - new Date(a.promotedAt).getTime(),
+        (a, b) => new Date(b.promotedAt).getTime() - new Date(a.promotedAt).getTime(),
       );
       return acc;
     },
@@ -91,8 +87,7 @@ const PromotionTimeline: React.FC<PromotionTimelineProps> = ({
               </Timeline.Item>
             ))}
           </Timeline>
-          {(!groupedPromotions[channel] ||
-            groupedPromotions[channel].length === 0) && (
+          {(!groupedPromotions[channel] || groupedPromotions[channel].length === 0) && (
             <div className="text-sm text-gray-500">No promotions</div>
           )}
         </div>

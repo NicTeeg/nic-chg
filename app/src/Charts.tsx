@@ -33,9 +33,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
       {label}
       <button
         onClick={() => !disabled && onSort(sortKey)}
-        className={`ml-1 ${
-          disabled ? "text-gray-300" : "text-gray-400 hover:text-gray-600"
-        }`}
+        className={`ml-1 ${disabled ? "text-gray-300" : "text-gray-400 hover:text-gray-600"}`}
         disabled={disabled}
       >
         {currentSort === sortKey ? (
@@ -55,21 +53,10 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
 const SimpleHeader: React.FC<{ label: string; className?: string }> = ({
   label,
   className = "",
-}) => (
-  <th className={`px-2.5 py-2 text-start font-medium ${className}`}>{label}</th>
-);
+}) => <th className={`px-2.5 py-2 text-start font-medium ${className}`}>{label}</th>;
 
-const SpannedCell = ({
-  content,
-  rowSpan,
-}: {
-  content: React.ReactNode;
-  rowSpan: number;
-}) => (
-  <td
-    className="whitespace-nowrap bg-white p-2 align-top dark:bg-gray-800"
-    rowSpan={rowSpan}
-  >
+const SpannedCell = ({ content, rowSpan }: { content: React.ReactNode; rowSpan: number }) => (
+  <td className="whitespace-nowrap bg-white p-2 align-top dark:bg-gray-800" rowSpan={rowSpan}>
     {content}
   </td>
 );
@@ -78,9 +65,7 @@ interface ChartWithVersions extends Chart {
   versions: ChartVersion[];
 }
 
-const getUniqueReleaseChannels = (activeVersions: {
-  [key: string]: ChartVersion[];
-}): string[] => {
+const getUniqueReleaseChannels = (activeVersions: { [key: string]: ChartVersion[] }): string[] => {
   const channelPromotions = Object.values(activeVersions)
     .flat()
     .flatMap((version) => version.promotions)
@@ -100,10 +85,7 @@ const getUniqueReleaseChannels = (activeVersions: {
     );
 
   return Object.entries(channelPromotions)
-    .sort(
-      ([, dateA], [, dateB]) =>
-        new Date(dateA).getTime() - new Date(dateB).getTime(),
-    )
+    .sort(([, dateA], [, dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
     .map(([channel]) => channel);
 };
 
@@ -133,11 +115,8 @@ const ReleaseChannelFilter: React.FC<{
 );
 
 const Charts = () => {
-  const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
-    [],
-  );
-  const [selectedReleaseChannel, setSelectedReleaseChannel] =
-    useState<string>("");
+  const [selectedRepositories, setSelectedRepositories] = useState<string[]>([]);
+  const [selectedReleaseChannel, setSelectedReleaseChannel] = useState<string>("");
   const [charts, setCharts] = useState<Chart[]>([]);
   const [activeVersions, setActiveVersions] = useState<{
     [key: string]: ChartVersion[];
@@ -186,16 +165,13 @@ const Charts = () => {
   const withVersions = (chart: Chart): ChartWithVersions => ({
     ...chart,
     versions: (activeVersions[chart.id] || []).sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     ),
   });
 
   const sortedCharts = (a: ChartWithVersions, b: ChartWithVersions): number => {
     if (sortField === "chartName") {
-      return sortDirection === "asc"
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name);
+      return sortDirection === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
     }
     if (sortField === "promotedAt" && selectedReleaseChannel) {
       const getPromotionDate = (chart: ChartWithVersions) => {
@@ -231,18 +207,13 @@ const Charts = () => {
           <tr
             key={`${chart.id}-${version.id}`}
             className={`border-b border-gray-200 dark:border-gray-700 ${
-              versionIndex % 2 === 1
-                ? "bg-surface-light dark:bg-surface-dark"
-                : ""
+              versionIndex % 2 === 1 ? "bg-surface-light dark:bg-surface-dark" : ""
             }`}
           >
             {versionIndex === 0 ? (
               <>
                 <SpannedCell content={chart.lob} rowSpan={versions.length} />
-                <SpannedCell
-                  content={chart.repository}
-                  rowSpan={versions.length}
-                />
+                <SpannedCell content={chart.repository} rowSpan={versions.length} />
                 <SpannedCell
                   content={
                     <Link
@@ -268,9 +239,7 @@ const Charts = () => {
                     <>
                       <span
                         key={index}
-                        title={`Promoted at: ${new Date(
-                          promotion.promotedAt,
-                        ).toLocaleString()}`}
+                        title={`Promoted at: ${new Date(promotion.promotedAt).toLocaleString()}`}
                         className="whitespace-nowrap rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
                       >
                         {promotion.releaseChannel}
@@ -361,8 +330,7 @@ const Charts = () => {
                     !selectedReleaseChannel ||
                     chart.versions.some((version) =>
                       version.promotions.some(
-                        (promotion) =>
-                          promotion.releaseChannel === selectedReleaseChannel,
+                        (promotion) => promotion.releaseChannel === selectedReleaseChannel,
                       ),
                     ),
                 )

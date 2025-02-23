@@ -32,9 +32,7 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
         className="flex w-full items-center justify-between rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
       >
         <span className="font-medium">{lob}</span>
-        <span
-          className={`transform transition-transform ${isExpanded ? "rotate-180" : ""}`}
-        >
+        <span className={`transform transition-transform ${isExpanded ? "rotate-180" : ""}`}>
           <NavArrowDown />
         </span>
       </button>
@@ -42,10 +40,7 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
         <div className="ml-2 mt-1 flex flex-col gap-1">
           {repositories.map((repository) =>
             repository.name.includes(filter) ? (
-              <div
-                key={repository.name}
-                className="flex items-center gap-2 py-0.5"
-              >
+              <div key={repository.name} className="flex items-center gap-2 py-0.5">
                 <div className="flex shrink-0 items-center">
                   <Checkbox
                     id={repository.name}
@@ -56,9 +51,7 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
                     <Checkbox.Indicator />
                   </Checkbox>
                 </div>
-                <span className="min-w-0 flex-1 text-sm">
-                  {repository.name}
-                </span>
+                <span className="min-w-0 flex-1 text-sm">{repository.name}</span>
               </div>
             ) : null,
           )}
@@ -123,9 +116,7 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
     let newSelected: string[];
 
     if (isSelected) {
-      newSelected = selectedRepositories.filter(
-        (name) => name !== repository.name,
-      );
+      newSelected = selectedRepositories.filter((name) => name !== repository.name);
     } else {
       newSelected = [...selectedRepositories, repository.name];
     }
