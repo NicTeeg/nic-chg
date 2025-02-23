@@ -139,8 +139,8 @@ function Charts() {
                 />
               </>
             ) : null}
-                        <td className="w-min px-4 py-2">
-                        <div className="flex flex-wrap gap-1">
+            <td className="w-min px-4 py-2">
+              <div className="flex flex-wrap gap-1">
                 {version.promotions
                   .filter(
                     (promotion) =>
@@ -149,26 +149,22 @@ function Charts() {
                   )
                   .map((promotion, index) => (
                     <span
-                    key={index}
-                    title={`Promoted at: ${new Date(
-                      promotion.promotedAt,
-                    ).toLocaleString()}`}
-                    className={`whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${
-                      promotion.active
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-200 text-gray-600"
-                    } flex flex-col items-center`}
-                  >
-                    <span>
-                      {promotion.releaseChannel}
+                      key={index}
+                      title={`Promoted at: ${new Date(promotion.promotedAt).toLocaleString()}`}
+                      className={`whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${
+                        promotion.active ? "bg-blue-100 text-blue-800" : "bg-gray-200 text-gray-600"
+                      } flex flex-col items-center`}
+                    >
+                      <span>{promotion.releaseChannel}</span>
+                      {selectedReleaseChannel && (
+                        <span className="mt-1 opacity-75">
+                          {new Date(promotion.promotedAt).toLocaleString(undefined, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      )}
                     </span>
-                    {selectedReleaseChannel && <span className="mt-1 opacity-75">
-                      {new Date(promotion.promotedAt).toLocaleString(undefined, {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </span>}
-                  </span>
                   ))}
               </div>
             </td>
