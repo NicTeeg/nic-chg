@@ -129,7 +129,7 @@ function Charts() {
                 <SpannedCell
                   content={
                     <Link
-                      to={`/changelog?repository=${chart.repository}&chart=${chart.name}`}
+                      to={`/changelog?repositories=${chart.repository}&chart=${chart.name}`}
                       className="font-bold text-blue-600 hover:underline"
                     >
                       {chart.name}
@@ -196,10 +196,13 @@ function Charts() {
 
   return (
     <div className="flex h-screen">
-      <RepositorySelector
-        selectedRepositories={selectedRepositories}
-        onSelectedRepositoriesChange={setSelectedRepositories}
-      />
+      <div className="flex shrink-0 flex-col border-r border-surface">
+        <RepositorySelector
+          selectedRepositories={selectedRepositories}
+          onSelectedRepositoriesChange={setSelectedRepositories}
+          allowMultiSelect={true}
+        />
+      </div>
       <div className="flex-1 overflow-auto p-4">
         <ReleaseChannelFilter
           releaseChannels={releaseChannels}

@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getAllRepositories } from "../../db/db";
 import { Repository } from "../../db/types";
-import { Checkbox } from "@material-tailwind/react";
 import { NavArrowDown, Filter } from "iconoir-react";
 
 interface RepositoryGroupProps {
@@ -11,6 +10,7 @@ interface RepositoryGroupProps {
   selectedRepositories: string[];
   filter: string;
   onSelect: (repository: Repository) => void;
+  allowMultiSelect: boolean;
 }
 
 const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
@@ -19,7 +19,9 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
   selectedRepositories,
   filter,
   onSelect,
+  allowMultiSelect,
 }) => {
+  console.log(selectedRepositories);
   const hasSelectedRepository = repositories.some((repo) =>
     selectedRepositories.includes(repo.name),
   );
@@ -42,14 +44,12 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
             repository.name.includes(filter) ? (
               <div key={repository.name} className="flex items-center gap-2 py-0.5">
                 <div className="flex shrink-0 items-center">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     id={repository.name}
-                    color="secondary"
                     checked={selectedRepositories.includes(repository.name)}
                     onChange={() => onSelect(repository)}
-                  >
-                    <Checkbox.Indicator />
-                  </Checkbox>
+                  />
                 </div>
                 <span className="min-w-0 flex-1 text-sm">{repository.name}</span>
               </div>
@@ -64,11 +64,13 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
 interface RepositorySelectorProps {
   selectedRepositories: string[];
   onSelectedRepositoriesChange: (repositories: string[]) => void;
+  allowMultiSelect?: boolean;
 }
 
 const RepositorySelector: React.FC<RepositorySelectorProps> = ({
   selectedRepositories,
   onSelectedRepositoriesChange,
+  allowMultiSelect = true,
 }) => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [repoFilter, setRepoFilter] = useState("");
@@ -118,7 +120,9 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
     if (isSelected) {
       newSelected = selectedRepositories.filter((name) => name !== repository.name);
     } else {
-      newSelected = [...selectedRepositories, repository.name];
+      newSelected = allowMultiSelect
+        ? [...selectedRepositories, repository.name]
+        : [repository.name];
     }
 
     onSelectedRepositoriesChange(newSelected);
@@ -132,7 +136,7 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
   };
 
   return (
-    <div className="w-60 shrink-0 border-r border-surface bg-white p-4 dark:bg-gray-800">
+    <div className="flex h-full w-60 shrink-0 flex-col bg-white p-3 dark:bg-gray-800">
       <h2 className="mb-4 font-bold">Repositories</h2>
       <div className="mb-4 flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-gray-700 dark:bg-gray-900">
         <Filter className="h-4 w-4 text-gray-400" />
@@ -144,7 +148,7 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
           className="w-full bg-transparent text-sm placeholder-gray-400 outline-none"
         />
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col pr-2">
           {groupedRepositories.map(([lob, repos]) => (
             <RepositoryGroup
@@ -154,6 +158,7 @@ const RepositorySelector: React.FC<RepositorySelectorProps> = ({
               selectedRepositories={selectedRepositories}
               filter={repoFilter}
               onSelect={handleRepositorySelect}
+              allowMultiSelect={allowMultiSelect}
             />
           ))}
         </div>
