@@ -1,5 +1,5 @@
 import React from "react";
-import { ChartVersion, Chart } from "../db/types";
+import { ChartVersion, Chart } from "../../../db/types";
 
 interface ChartVersionCardProps {
   chart: Chart;

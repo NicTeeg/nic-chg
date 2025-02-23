@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getAllRepositories } from "../db/db";
-import { Repository } from "../db/types";
+import { getAllRepositories } from "../../db/db";
+import { Repository } from "../../db/types";
 import { Checkbox } from "@material-tailwind/react";
 import { NavArrowDown, Filter } from "iconoir-react";
 

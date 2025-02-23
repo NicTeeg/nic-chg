@@ -15,7 +15,7 @@ const Links = [
   },
 ];
 
-export function SideBar() {
+function SideBar() {
   return (
     <Card className="max-w-[280px]">
       <Card.Header className="mx-4 mb-0 mt-3 h-max">
@@ -34,3 +34,5 @@ export function SideBar() {
     </Card>
   );
 }
+
+export default SideBar;

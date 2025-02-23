@@ -1,8 +1,8 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
-import ChartChangelog from "./ChartChangelog";
-import Charts from "./Charts";
-import Home from "./Home";
-import { SideBar } from "./SideBar";
+import ChartChangelog from "./components/chartschangelog/ChartChangelog";
+import Charts from "./components/charts/Charts";
+import Home from "./components/home/Home";
+import SideBar from "./SideBar";
 
 function App() {
   return (

@@ -1,7 +1,7 @@
 import React from "react";
-import { Chart, ChartVersion } from "../db/types";
+import { Chart, ChartVersion } from "../../db/types";
 import { Timeline, Typography } from "@material-tailwind/react";
-import ChartVersionCard from "./ChartVersionCard";
+import ChartVersionCard from "./cards/ChartVersionCard";
 
 interface PromotionTimelineProps {
   chart: Chart;

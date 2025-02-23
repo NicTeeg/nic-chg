@@ -1,59 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { getChartsByRepositories, getChartVersions } from "./db/db";
-import { Chart, ChartVersion } from "./db/types";
+import { getChartsByRepositories, getChartVersions } from "../../db/db";
+import { Chart, ChartVersion } from "../../db/types";
 import { Link } from "react-router-dom";
-import RepositorySelector from "./components/RepositorySelector";
-import { ArrowDown, ArrowUp } from "iconoir-react";
+import RepositorySelector from "../shared/RepositorySelector";
+import ReleaseChannelFilter from "../shared/ReleaseChannelFilter";
+import { SimpleHeader, SortableHeader, SortDirection } from "../shared/table/Headers";
+import { getUniqueReleaseChannels } from "../../utils/releaseChannels";
 
-type SortDirection = "asc" | "desc";
-type SortField = "chartName" | "promotedAt" | null;
-
-interface SortableHeaderProps {
-  label: string;
-  sortKey: SortField;
-  currentSort: SortField;
-  sortDirection: SortDirection;
-  onSort: (field: SortField) => void;
-  disabled?: boolean;
-  className?: string;
-}
-
-const SortableHeader: React.FC<SortableHeaderProps> = ({
-  label,
-  sortKey,
-  currentSort,
-  sortDirection,
-  onSort,
-  disabled,
-  className,
-}) => (
-  <th className={`px-2.5 py-2 text-start font-medium ${className || ""}`}>
-    <div className="flex items-center gap-1">
-      {label}
-      <button
-        onClick={() => !disabled && onSort(sortKey)}
-        className={`ml-1 ${disabled ? "text-gray-300" : "text-gray-400 hover:text-gray-600"}`}
-        disabled={disabled}
-      >
-        {currentSort === sortKey ? (
-          sortDirection === "asc" ? (
-            <ArrowUp className="h-4 w-4" />
-          ) : (
-            <ArrowDown className="h-4 w-4" />
-          )
-        ) : (
-          <ArrowDown className="h-4 w-4 opacity-50" />
-        )}
-      </button>
-    </div>
-  </th>
-);
-
-const SimpleHeader: React.FC<{ label: string; className?: string }> = ({
-  label,
-  className = "",
-}) => <th className={`px-2.5 py-2 text-start font-medium ${className}`}>{label}</th>;
+type ChartSortField = "chartName" | "promotedAt";
 
 const SpannedCell = ({ content, rowSpan }: { content: React.ReactNode; rowSpan: number }) => (
   <td className="whitespace-nowrap bg-white p-2 align-top dark:bg-gray-800" rowSpan={rowSpan}>
@@ -65,63 +20,14 @@ interface ChartWithVersions extends Chart {
   versions: ChartVersion[];
 }
 
-const getUniqueReleaseChannels = (activeVersions: { [key: string]: ChartVersion[] }): string[] => {
-  const channelPromotions = Object.values(activeVersions)
-    .flat()
-    .flatMap((version) => version.promotions)
-    .filter((promotion) => promotion.active)
-    .reduce(
-      (acc, promotion) => {
-        if (
-          !acc[promotion.releaseChannel] ||
-          new Date(promotion.promotedAt).getTime() <
-            new Date(acc[promotion.releaseChannel]).getTime()
-        ) {
-          acc[promotion.releaseChannel] = promotion.promotedAt;
-        }
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
-
-  return Object.entries(channelPromotions)
-    .sort(([, dateA], [, dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
-    .map(([channel]) => channel);
-};
-
-const ReleaseChannelFilter: React.FC<{
-  channels: string[];
-  selected: string;
-  onChange: (channel: string) => void;
-}> = ({ channels, selected, onChange }) => (
-  <div className="mb-4 flex items-center gap-2">
-    <label htmlFor="releaseChannel" className="text-sm font-medium">
-      Filter by Release Channel:
-    </label>
-    <select
-      id="releaseChannel"
-      value={selected}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-800"
-    >
-      <option value="">All Channels</option>
-      {channels.map((channel) => (
-        <option key={channel} value={channel}>
-          {channel}
-        </option>
-      ))}
-    </select>
-  </div>
-);
-
-const Charts = () => {
+function Charts() {
   const [selectedRepositories, setSelectedRepositories] = useState<string[]>([]);
   const [selectedReleaseChannel, setSelectedReleaseChannel] = useState<string>("");
   const [charts, setCharts] = useState<Chart[]>([]);
   const [activeVersions, setActiveVersions] = useState<{
     [key: string]: ChartVersion[];
   }>({});
-  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortField, setSortField] = useState<ChartSortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const location = useLocation();
 
@@ -138,13 +44,23 @@ const Charts = () => {
     if (selectedRepositories.length > 0) {
       getChartsByRepositories(selectedRepositories).then((result) => {
         setCharts(result);
-        result.forEach((chart) => {
-          getChartVersions(chart.id.toString(), "", true).then((versions) => {
-            setActiveVersions((prev) => ({
-              ...prev,
-              [chart.id]: versions,
-            }));
-          });
+
+        const versionPromises = result.map((chart) =>
+          getChartVersions(chart.id.toString(), "", true).then((versions) => ({
+            chartId: chart.id,
+            versions,
+          })),
+        );
+
+        Promise.all(versionPromises).then((results) => {
+          const newVersions = results.reduce(
+            (acc, { chartId, versions }) => ({
+              ...acc,
+              [chartId]: versions,
+            }),
+            {},
+          );
+          setActiveVersions(newVersions);
         });
       });
     } else {
@@ -153,20 +69,22 @@ const Charts = () => {
     }
   }, [selectedRepositories]);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDirection("desc");
-    }
-  };
+  const releaseChannels = useMemo(
+    () => getUniqueReleaseChannels(Object.values(activeVersions).flat()),
+    [activeVersions],
+  );
 
-  const withVersions = (chart: Chart): ChartWithVersions => ({
+  const withFilteredVersions = (chart: Chart): ChartWithVersions => ({
     ...chart,
-    versions: (activeVersions[chart.id] || []).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    ),
+    versions: (activeVersions[chart.id] || [])
+      .filter(
+        (version) =>
+          !selectedReleaseChannel ||
+          version.promotions.some(
+            (promotion) => promotion.releaseChannel === selectedReleaseChannel,
+          ),
+      )
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
   });
 
   const sortedCharts = (a: ChartWithVersions, b: ChartWithVersions): number => {
@@ -193,13 +111,7 @@ const Charts = () => {
   };
 
   const buildChartRow = (chart: ChartWithVersions) => {
-    const versions = selectedReleaseChannel
-      ? chart.versions.filter((version) =>
-          version.promotions.some(
-            (promotion) => promotion.releaseChannel === selectedReleaseChannel,
-          ),
-        )
-      : chart.versions;
+    const versions = chart.versions;
 
     return (
       <React.Fragment key={chart.id}>
@@ -236,11 +148,10 @@ const Charts = () => {
                       promotion.releaseChannel === selectedReleaseChannel,
                   )
                   .map((promotion, index) => (
-                    <>
+                    <div key={index} className="flex items-center whitespace-nowrap">
                       <span
-                        key={index}
                         title={`Promoted at: ${new Date(promotion.promotedAt).toLocaleString()}`}
-                        className="whitespace-nowrap rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
+                        className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
                       >
                         {promotion.releaseChannel}
                       </span>
@@ -249,7 +160,7 @@ const Charts = () => {
                           ({new Date(promotion.promotedAt).toLocaleString()})
                         </span>
                       )}
-                    </>
+                    </div>
                   ))}
               </div>
             </td>
@@ -291,7 +202,7 @@ const Charts = () => {
       />
       <div className="flex-1 overflow-auto p-4">
         <ReleaseChannelFilter
-          channels={getUniqueReleaseChannels(activeVersions)}
+          releaseChannels={releaseChannels}
           selected={selectedReleaseChannel}
           onChange={setSelectedReleaseChannel}
         />
@@ -301,21 +212,26 @@ const Charts = () => {
               <tr>
                 <SimpleHeader label="LOB" />
                 <SimpleHeader label="Repository" />
-                <SortableHeader
+                <SortableHeader<ChartSortField>
                   label="Chart Name"
                   sortKey="chartName"
-                  currentSort={sortField}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
+                  sortConfig={{
+                    field: sortField,
+                    direction: sortDirection,
+                    onFieldChange: setSortField,
+                    onDirectionChange: setSortDirection,
+                  }}
                 />
-                <SortableHeader
+                <SortableHeader<ChartSortField>
                   label="Release Channels"
                   sortKey="promotedAt"
-                  currentSort={sortField}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
+                  sortConfig={{
+                    field: sortField,
+                    direction: sortDirection,
+                    onFieldChange: setSortField,
+                    onDirectionChange: setSortDirection,
+                  }}
                   disabled={!selectedReleaseChannel}
-                  className="w-min whitespace-nowrap"
                 />
                 <SimpleHeader label="Version" />
                 <SimpleHeader label="Description" />
@@ -323,25 +239,13 @@ const Charts = () => {
               </tr>
             </thead>
             <tbody className="group text-sm text-black dark:text-white">
-              {charts
-                .map(withVersions)
-                .filter(
-                  (chart) =>
-                    !selectedReleaseChannel ||
-                    chart.versions.some((version) =>
-                      version.promotions.some(
-                        (promotion) => promotion.releaseChannel === selectedReleaseChannel,
-                      ),
-                    ),
-                )
-                .sort(sortedCharts)
-                .map(buildChartRow)}
+              {charts.map(withFilteredVersions).sort(sortedCharts).map(buildChartRow)}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default Charts;

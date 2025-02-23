@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getAllCharts, getChartByRepoAndName, getChartVersions } from "./db/db";
-import { Chart, ChartVersion } from "./db/types";
+import { getAllCharts, getChartByRepoAndName, getChartVersions } from "../../db/db";
+import { Chart, ChartVersion } from "../../db/types";
 import { Menu, Button, Tabs } from "@material-tailwind/react";
 import { NavArrowDown } from "iconoir-react";
-import PromotionTimeline from "./components/PromotionTimeline";
+import PromotionTimeline from "../shared/PromotionTimeline";
 
-const ChartChangelog = () => {
+function ChartChangelog() {
   const [charts, setCharts] = useState<Chart[]>([]);
   const [selectedChart, setSelectedChart] = useState<Chart>();
   const [chartVersions, setChartVersions] = useState<ChartVersion[]>([]);
@@ -156,6 +156,6 @@ const ChartChangelog = () => {
       </Tabs>
     </div>
   );
-};
+}
 
 export default ChartChangelog;
