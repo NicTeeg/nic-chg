@@ -7,7 +7,7 @@ This project is designed to manage Helm charts and their versions. It provides a
 The main purpose of this project is to:
 
 - Store Helm chart metadata, including name, repository, line of business, and registry path.
-- Store Helm chart version information, including version number, commit SHA, and creation timestamp.
+- Store Helm chart versions and promotions information, including version number, commit SHA, and release channel.
 - Provide a CLI interface to insert and manage Helm chart data.
 
 ## Database Schema
@@ -16,6 +16,7 @@ The database schema consists of two tables:
 
 - `charts`: Stores metadata about Helm charts.
 - `chart_versions`: Stores version information for Helm charts.
+- `chart_version_promotions`: Stores promotions of Helm charts.
 
 ## Example CLI Commands
 
@@ -41,8 +42,9 @@ nic-chg -add-chart-version='{
   "chart_name": "example-chart",
   "repository": "example-repo",
   "version": "1.0.1",
-  "commit_sha": "abc124",
-  "commit_message": "example commit message"
+  "commit_sha": "def234",
+  "commit_message": "example commit message",
+  "created_at": "2025-02-01T12:34:56Z"
 }'
 ```
 

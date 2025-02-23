@@ -3,6 +3,7 @@ package repo
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 // Repository defines the methods that any repository implementation must have.
@@ -81,8 +82,12 @@ func (r *Repo) InsertChartVersion(version ChartVersion) (int64, error) {
 	if version.Version == "" || version.CommitSHA == "" {
 		return 0, fmt.Errorf("version and commit SHA cannot be empty")
 	}
-	result, err := r.DB.Exec("INSERT INTO chart_versions (chart_id, version, commit_sha) VALUES (?, ?, ?)",
-		version.ChartID, version.Version, version.CommitSHA)
+	createdAt := version.CreatedAt
+	if createdAt == "" {
+		createdAt = time.Now().Format(time.RFC3339)
+	}
+	result, err := r.DB.Exec("INSERT INTO chart_versions (chart_id, version, commit_sha, commit_message, created_at) VALUES (?, ?, ?, ?, ?)",
+		version.ChartID, version.Version, version.CommitSHA, version.CommitMessage, createdAt)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert chart version: %w", err)
 	}
