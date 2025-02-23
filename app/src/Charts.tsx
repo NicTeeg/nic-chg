@@ -7,7 +7,7 @@ import RepositorySelector from "./components/RepositorySelector";
 import { ArrowDown, ArrowUp } from "iconoir-react";
 
 type SortDirection = "asc" | "desc";
-type SortField = "createdAt" | "chartName" | null;
+type SortField = "chartName" | "promotedAt" | null;
 
 interface SortableHeaderProps {
   label: string;
@@ -15,6 +15,8 @@ interface SortableHeaderProps {
   currentSort: SortField;
   sortDirection: SortDirection;
   onSort: (field: SortField) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 const SortableHeader: React.FC<SortableHeaderProps> = ({
@@ -23,13 +25,18 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
   currentSort,
   sortDirection,
   onSort,
+  disabled,
+  className,
 }) => (
-  <th className="px-2.5 py-2 text-start font-medium">
+  <th className={`px-2.5 py-2 text-start font-medium ${className || ""}`}>
     <div className="flex items-center gap-1">
       {label}
       <button
-        onClick={() => onSort(sortKey)}
-        className="ml-1 text-gray-400 hover:text-gray-600"
+        onClick={() => !disabled && onSort(sortKey)}
+        className={`ml-1 ${
+          disabled ? "text-gray-300" : "text-gray-400 hover:text-gray-600"
+        }`}
+        disabled={disabled}
       >
         {currentSort === sortKey ? (
           sortDirection === "asc" ? (
@@ -67,15 +74,70 @@ const SpannedCell = ({
   </td>
 );
 
-interface ChartWithLatestCreatedAt extends Chart {
+interface ChartWithVersions extends Chart {
   versions: ChartVersion[];
-  latestCreatedAt: string;
 }
+
+const getUniqueReleaseChannels = (activeVersions: {
+  [key: string]: ChartVersion[];
+}): string[] => {
+  const channelPromotions = Object.values(activeVersions)
+    .flat()
+    .flatMap((version) => version.promotions)
+    .filter((promotion) => promotion.active)
+    .reduce(
+      (acc, promotion) => {
+        if (
+          !acc[promotion.releaseChannel] ||
+          new Date(promotion.promotedAt).getTime() <
+            new Date(acc[promotion.releaseChannel]).getTime()
+        ) {
+          acc[promotion.releaseChannel] = promotion.promotedAt;
+        }
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+  return Object.entries(channelPromotions)
+    .sort(
+      ([, dateA], [, dateB]) =>
+        new Date(dateA).getTime() - new Date(dateB).getTime(),
+    )
+    .map(([channel]) => channel);
+};
+
+const ReleaseChannelFilter: React.FC<{
+  channels: string[];
+  selected: string;
+  onChange: (channel: string) => void;
+}> = ({ channels, selected, onChange }) => (
+  <div className="mb-4 flex items-center gap-2">
+    <label htmlFor="releaseChannel" className="text-sm font-medium">
+      Filter by Release Channel:
+    </label>
+    <select
+      id="releaseChannel"
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-800"
+    >
+      <option value="">All Channels</option>
+      {channels.map((channel) => (
+        <option key={channel} value={channel}>
+          {channel}
+        </option>
+      ))}
+    </select>
+  </div>
+);
 
 const Charts = () => {
   const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
     [],
   );
+  const [selectedReleaseChannel, setSelectedReleaseChannel] =
+    useState<string>("");
   const [charts, setCharts] = useState<Chart[]>([]);
   const [activeVersions, setActiveVersions] = useState<{
     [key: string]: ChartVersion[];
@@ -98,7 +160,7 @@ const Charts = () => {
       getChartsByRepositories(selectedRepositories).then((result) => {
         setCharts(result);
         result.forEach((chart) => {
-          getChartVersions(chart.id.toString(), true).then((versions) => {
+          getChartVersions(chart.id.toString(), "", true).then((versions) => {
             setActiveVersions((prev) => ({
               ...prev,
               [chart.id]: versions,
@@ -121,36 +183,48 @@ const Charts = () => {
     }
   };
 
-  const withLatestCreatedAt = (chart: Chart): ChartWithLatestCreatedAt => ({
+  const withVersions = (chart: Chart): ChartWithVersions => ({
     ...chart,
     versions: (activeVersions[chart.id] || []).sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     ),
-    latestCreatedAt:
-      activeVersions[chart.id]?.[0]?.createdAt || new Date(0).toISOString(),
   });
 
-  const sortedCharts = (
-    a: ChartWithLatestCreatedAt,
-    b: ChartWithLatestCreatedAt,
-  ): number => {
-    if (sortField === "createdAt") {
-      const comparison =
-        new Date(b.latestCreatedAt).getTime() -
-        new Date(a.latestCreatedAt).getTime();
-      return sortDirection === "asc" ? -comparison : comparison;
-    }
+  const sortedCharts = (a: ChartWithVersions, b: ChartWithVersions): number => {
     if (sortField === "chartName") {
       return sortDirection === "asc"
         ? a.name.localeCompare(b.name)
         : b.name.localeCompare(a.name);
     }
+    if (sortField === "promotedAt" && selectedReleaseChannel) {
+      const getPromotionDate = (chart: ChartWithVersions) => {
+        const latestVersion = chart.versions.find((version) =>
+          version.promotions.some(
+            (promotion) => promotion.releaseChannel === selectedReleaseChannel,
+          ),
+        );
+        const promotion = latestVersion?.promotions.find(
+          (p) => p.releaseChannel === selectedReleaseChannel,
+        );
+        return promotion ? new Date(promotion.promotedAt).getTime() : 0;
+      };
+
+      const comparison = getPromotionDate(b) - getPromotionDate(a);
+      return sortDirection === "asc" ? -comparison : comparison;
+    }
     return 0;
   };
 
-  const buildChartRow = (chart: ChartWithLatestCreatedAt) => {
-    const versions = chart.versions;
+  const buildChartRow = (chart: ChartWithVersions) => {
+    const versions = selectedReleaseChannel
+      ? chart.versions.filter((version) =>
+          version.promotions.some(
+            (promotion) => promotion.releaseChannel === selectedReleaseChannel,
+          ),
+        )
+      : chart.versions;
+
     return (
       <React.Fragment key={chart.id}>
         {versions.map((version, versionIndex) => (
@@ -185,22 +259,33 @@ const Charts = () => {
             <td className="w-min p-2">
               <div className="flex flex-wrap gap-1">
                 {version.promotions
-                  .filter((promotion) => promotion.active)
+                  .filter(
+                    (promotion) =>
+                      !selectedReleaseChannel ||
+                      promotion.releaseChannel === selectedReleaseChannel,
+                  )
                   .map((promotion, index) => (
-                    <span
-                      key={index}
-                      title={`Promoted at: ${new Date(
-                        promotion.promotedAt,
-                      ).toLocaleString()}`}
-                      className="whitespace-nowrap rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
-                    >
-                      {promotion.releaseChannel}
-                    </span>
+                    <>
+                      <span
+                        key={index}
+                        title={`Promoted at: ${new Date(
+                          promotion.promotedAt,
+                        ).toLocaleString()}`}
+                        className="whitespace-nowrap rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
+                      >
+                        {promotion.releaseChannel}
+                      </span>
+                      {selectedReleaseChannel && (
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({new Date(promotion.promotedAt).toLocaleString()})
+                        </span>
+                      )}
+                    </>
                   ))}
               </div>
             </td>
-            <td className="whitespace-nowrap p-2 font-bold">
-              {version.version}
+            <td className="whitespace-nowrap p-2">
+              <span className="font-bold">{version.version}</span>
             </td>
             <td className="max-w-md p-2">
               <a
@@ -236,6 +321,11 @@ const Charts = () => {
         onSelectedRepositoriesChange={setSelectedRepositories}
       />
       <div className="flex-1 overflow-auto p-4">
+        <ReleaseChannelFilter
+          channels={getUniqueReleaseChannels(activeVersions)}
+          selected={selectedReleaseChannel}
+          onChange={setSelectedReleaseChannel}
+        />
         <div className="w-full overflow-hidden rounded-lg border border-surface">
           <table className="w-full">
             <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
@@ -249,24 +339,33 @@ const Charts = () => {
                   sortDirection={sortDirection}
                   onSort={handleSort}
                 />
-                <SimpleHeader
+                <SortableHeader
                   label="Release Channels"
+                  sortKey="promotedAt"
+                  currentSort={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                  disabled={!selectedReleaseChannel}
                   className="w-min whitespace-nowrap"
                 />
                 <SimpleHeader label="Version" />
                 <SimpleHeader label="Description" />
-                <SortableHeader
-                  label="Created At"
-                  sortKey="createdAt"
-                  currentSort={sortField}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
-                />
+                <SimpleHeader label="Created At" />
               </tr>
             </thead>
             <tbody className="group text-sm text-black dark:text-white">
               {charts
-                .map(withLatestCreatedAt)
+                .map(withVersions)
+                .filter(
+                  (chart) =>
+                    !selectedReleaseChannel ||
+                    chart.versions.some((version) =>
+                      version.promotions.some(
+                        (promotion) =>
+                          promotion.releaseChannel === selectedReleaseChannel,
+                      ),
+                    ),
+                )
                 .sort(sortedCharts)
                 .map(buildChartRow)}
             </tbody>

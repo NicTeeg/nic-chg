@@ -44,11 +44,6 @@ const ChartChangelog = () => {
     navigate(`?repository=${chart.repository}&chart=${chart.name}`);
   };
 
-  const releaseChannels = chartVersions
-    .flatMap((version) => version.promotions.map((p) => p.releaseChannel))
-    .filter((value, index, self) => self.indexOf(value) === index)
-    .sort();
-
   return (
     <div className="overflow-x-auto">
       {""}

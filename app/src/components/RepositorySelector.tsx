@@ -56,7 +56,7 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
                     <Checkbox.Indicator />
                   </Checkbox>
                 </div>
-                <span className="min-w-0 flex-1 text-sm leading-none">
+                <span className="min-w-0 flex-1 text-sm">
                   {repository.name}
                 </span>
               </div>

@@ -6,12 +6,6 @@ import {
   ChartVersionPromotion,
 } from "./types";
 
-const workerUrl = new URL(
-  "sql.js-httpvfs/dist/sqlite.worker.js",
-  import.meta.url,
-);
-const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
-
 export async function getAllRepositories(): Promise<Repository[]> {
   const result = await queryDb(
     `SELECT DISTINCT repository, line_of_business FROM charts`,
@@ -52,14 +46,15 @@ export async function getAllCharts(): Promise<Chart[]> {
 export async function getChartsByRepositories(
   repositories: string[],
 ): Promise<Chart[]> {
-  const result = await queryDb(
-    `
-SELECT * 
-FROM charts 
-WHERE repository IN (${repositories.map(() => "?").join(",")})
-  `,
-    ...repositories,
-  );
+  const query = `
+  SELECT
+    * 
+  FROM
+    charts 
+  WHERE
+    repository IN (${repositories.map(() => "?").join(",")})
+  `;
+  const result = await queryDb(query, ...repositories);
   if (result.length === 0) {
     return [];
   }
@@ -104,32 +99,36 @@ export async function getChartByRepoAndName(
 
 export async function getChartVersions(
   chartId: string,
-  activeOnly = false,
+  releaseChannel: string = "",
+  activeOnly: boolean = false,
 ): Promise<ChartVersion[] | null> {
-  const result = await queryDb(
-    `
-SELECT
-  cvp.id AS promotion_id,
-  cvp.chart_version_id,
-  cvp.release_channel,
-  cvp.promoted_at,
-  cvp.active,
-  cv.id AS version_id,
-  cv.version,
-  cv.commit_sha,
-  cv.commit_message,
-  cv.created_at
-FROM
-  chart_version_promotions cvp
-JOIN
-  chart_versions cv ON cvp.chart_version_id = cv.id
-WHERE
-  cvp.chart_id = ?
-  ${activeOnly ? "AND cvp.active = 1" : ""}
-ORDER BY cv.created_at DESC
-`,
-    chartId,
-  );
+  const query = `
+  SELECT
+    cvp.id AS promotion_id,
+    cvp.chart_version_id,
+    cvp.release_channel,
+    cvp.promoted_at,
+    cvp.active,
+    cv.id AS version_id,
+    cv.version,
+    cv.commit_sha,
+    cv.commit_message,
+    cv.created_at
+  FROM
+    chart_version_promotions cvp
+  JOIN
+    chart_versions cv ON cvp.chart_version_id = cv.id
+  WHERE
+    cvp.chart_id = ?
+    ${activeOnly ? "AND cvp.active = 1" : ""}
+    ${releaseChannel.length > 0 ? `AND cvp.release_channel = ?` : ""}
+  ORDER BY cv.created_at DESC
+  `;
+  const params = [chartId];
+  if (releaseChannel.length > 0) {
+    params.push(releaseChannel);
+  }
+  const result = await queryDb(query, ...params);
   if (result.length === 0) {
     return [];
   }
@@ -161,6 +160,11 @@ ORDER BY cv.created_at DESC
   return Array.from(versionMap.values());
 }
 
+const workerUrl = new URL(
+  "sql.js-httpvfs/dist/sqlite.worker.js",
+  import.meta.url,
+);
+const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 let dbWorker: any = null;
 async function getDbWorker() {
   if (!dbWorker) {
