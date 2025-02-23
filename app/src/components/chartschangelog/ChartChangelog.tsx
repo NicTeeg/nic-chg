@@ -61,20 +61,21 @@ function ChartChangelog() {
           />
         </div>
       </div>
-      <div className="flex-1 overflow-auto p-4">
-        <Tabs defaultValue="versions">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Tabs defaultValue="versions" className="flex h-full flex-col">
           <Tabs.List className="rounded-none border-b border-secondary-dark bg-transparent py-0">
             <Tabs.Trigger value="versions">Versions</Tabs.Trigger>
             <Tabs.Trigger value="promotions">Promotions</Tabs.Trigger>
             <Tabs.TriggerIndicator className="rounded-none border-b-2 border-primary bg-transparent shadow-none" />
           </Tabs.List>
-          <Tabs.Panel value="versions">
+          <Tabs.Panel value="versions" className="flex-1 overflow-auto p-4">
             {selectedChart && chartVersions.length > 0 && (
-              <div className="mt-4 overflow-x-auto">
+              <div className="mt-4">
                 <table className="w-full border-collapse text-sm">
                   <thead className="border-b border-surface bg-surface-light text-sm font-medium text-foreground dark:bg-surface-dark">
                     <tr>
                       <SimpleHeader label="Version" />
+                      <SimpleHeader label="Commit SHA" />
                       <SimpleHeader label="Description" />
                       <SimpleHeader label="Release Channels" />
                     </tr>
@@ -87,7 +88,23 @@ function ChartChangelog() {
                           index % 2 === 1 ? "bg-surface-light dark:bg-surface-dark" : ""
                         }`}
                       >
-                        <td className="whitespace-nowrap px-4 py-2 font-bold">{version.version}</td>
+                        <td className="whitespace-nowrap px-4 py-2">
+                          <div className="flex flex-col">
+                            <span className="font-bold">{version.version}</span>
+                            <span className="text-xs text-gray-500">
+                              (
+                              {new Date(version.createdAt).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                              )
+                            </span>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 font-mono">
+                          <span>{version.commitSHA.substring(0, 7)}</span>
+                        </td>
                         <td className="max-w-md px-4 py-2">
                           <a
                             href={`https://github.com/org/${selectedChart.repository}/commit/${version.commitSHA}`}
@@ -107,14 +124,16 @@ function ChartChangelog() {
                                 title={`Promoted at: ${new Date(
                                   promotion.promotedAt,
                                 ).toLocaleString()}`}
-                                className={`whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${
+                                className={`whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${
                                   promotion.active
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-gray-200 text-gray-600"
                                 } flex flex-col items-center`}
                               >
-                                <span>{promotion.releaseChannel}</span>
-                                <span className="mt-1  opacity-75">
+                                <span className={`${promotion.active ? "font-semibold" : ""}`}>
+                                  {promotion.releaseChannel}
+                                </span>
+                                <span className="mt-1 opacity-75">
                                   {new Date(promotion.promotedAt).toLocaleString(undefined, {
                                     dateStyle: "short",
                                     timeStyle: "short",
@@ -131,10 +150,12 @@ function ChartChangelog() {
               </div>
             )}
           </Tabs.Panel>
-          <Tabs.Panel value="promotions" className="scrollbar overflow-x-scroll">
+          <Tabs.Panel value="promotions" className="flex-1 overflow-hidden p-4">
             {selectedChart && chartVersions.length > 0 && (
-              <div className="mt-4">
-                <PromotionTimeline chart={selectedChart} versions={chartVersions} />
+              <div className="mt-4 h-full overflow-x-auto">
+                <div className="pb-4">
+                  <PromotionTimeline chart={selectedChart} versions={chartVersions} />
+                </div>
               </div>
             )}
           </Tabs.Panel>

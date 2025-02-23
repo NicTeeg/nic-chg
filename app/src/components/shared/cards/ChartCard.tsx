@@ -19,7 +19,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart }) => {
       </div>
       <div className="mt-2">
         <Link
-          to={`/changelog?repository=${chart.repository}&chart=${chart.name}`}
+          to={`/changelog?repositories=${chart.repository}&chart=${chart.name}`}
           className="text-lg font-bold text-black hover:underline dark:text-white"
         >
           {chart.name}

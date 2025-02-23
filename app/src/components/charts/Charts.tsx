@@ -139,8 +139,8 @@ function Charts() {
                 />
               </>
             ) : null}
-            <td className="w-min p-2">
-              <div className="flex flex-wrap gap-1">
+                        <td className="w-min px-4 py-2">
+                        <div className="flex flex-wrap gap-1">
                 {version.promotions
                   .filter(
                     (promotion) =>
@@ -148,24 +148,43 @@ function Charts() {
                       promotion.releaseChannel === selectedReleaseChannel,
                   )
                   .map((promotion, index) => (
-                    <div key={index} className="flex items-center whitespace-nowrap">
-                      <span
-                        title={`Promoted at: ${new Date(promotion.promotedAt).toLocaleString()}`}
-                        className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
-                      >
-                        {promotion.releaseChannel}
-                      </span>
-                      {selectedReleaseChannel && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          ({new Date(promotion.promotedAt).toLocaleString()})
-                        </span>
-                      )}
-                    </div>
+                    <span
+                    key={index}
+                    title={`Promoted at: ${new Date(
+                      promotion.promotedAt,
+                    ).toLocaleString()}`}
+                    className={`whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${
+                      promotion.active
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-200 text-gray-600"
+                    } flex flex-col items-center`}
+                  >
+                    <span>
+                      {promotion.releaseChannel}
+                    </span>
+                    {selectedReleaseChannel && <span className="mt-1 opacity-75">
+                      {new Date(promotion.promotedAt).toLocaleString(undefined, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>}
+                  </span>
                   ))}
               </div>
             </td>
-            <td className="whitespace-nowrap p-2">
-              <span className="font-bold">{version.version}</span>
+            <td className="whitespace-nowrap px-4 py-2">
+              <div className="flex flex-col">
+                <span className="font-bold">{version.version}</span>
+                <span className="text-xs text-gray-500">
+                  (
+                  {new Date(version.createdAt).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                  )
+                </span>
+              </div>
             </td>
             <td className="max-w-md p-2">
               <a
@@ -177,16 +196,6 @@ function Charts() {
               >
                 {version.commitMessage}
               </a>
-            </td>
-            <td className="whitespace-nowrap p-2 text-gray-600 dark:text-gray-400">
-              {new Date(version.createdAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })}
             </td>
           </tr>
         ))}
@@ -238,7 +247,6 @@ function Charts() {
                 />
                 <SimpleHeader label="Version" />
                 <SimpleHeader label="Description" />
-                <SimpleHeader label="Created At" />
               </tr>
             </thead>
             <tbody className="group text-sm text-black dark:text-white">

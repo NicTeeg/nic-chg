@@ -19,7 +19,6 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
   selectedRepositories,
   filter,
   onSelect,
-  allowMultiSelect,
 }) => {
   console.log(selectedRepositories);
   const hasSelectedRepository = repositories.some((repo) =>
@@ -44,7 +43,7 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
             repository.name.includes(filter) ? (
               <div key={repository.name} className="flex items-center gap-2 py-0.5">
                 <div className="flex shrink-0 items-center">
-                  <input
+                <input
                     type="checkbox"
                     id={repository.name}
                     checked={selectedRepositories.includes(repository.name)}
@@ -53,7 +52,7 @@ const RepositoryGroup: React.FC<RepositoryGroupProps> = ({
                 </div>
                 <span className="min-w-0 flex-1 text-sm">{repository.name}</span>
               </div>
-            ) : null,
+            ) : null
           )}
         </div>
       )}
